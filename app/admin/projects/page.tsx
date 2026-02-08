@@ -11,6 +11,7 @@ interface Project {
     category: string
     status: string
     image_url: string
+    images?: string[]
     description?: string
     link?: string
     views?: number
@@ -31,7 +32,8 @@ export default function ProjectsPage() {
         status: "draft",
         description: "",
         link: "",
-        image_url: ""
+        image_url: "",
+        images: [] as string[]
     })
     const [imageFile, setImageFile] = useState<File | null>(null)
     const [uploading, setUploading] = useState(false)
@@ -54,7 +56,8 @@ export default function ProjectsPage() {
             status: project.status,
             description: project.description || "",
             link: project.link || "",
-            image_url: project.image_url || ""
+            image_url: project.image_url || "",
+            images: project.images || []
         })
         setIsFormOpen(true)
     }
@@ -65,11 +68,11 @@ export default function ProjectsPage() {
         if (!error) fetchProjects()
     }
 
-    const handleImageUpload = async (file: File) => {
+    const handleImageUpload = async (file: File, isGallery = false) => {
         setUploading(true)
         try {
             const fileExt = file.name.split('.').pop()
-            const fileName = `projects/${Date.now()}.${fileExt}`
+            const fileName = `projects/${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`
             const { error: uploadError } = await supabase.storage
                 .from('uploads')
                 .upload(fileName, file)
@@ -80,13 +83,26 @@ export default function ProjectsPage() {
                 .from('uploads')
                 .getPublicUrl(fileName)
 
-            setFormData(prev => ({ ...prev, image_url: publicUrl }))
+            if (isGallery) {
+                // Add to gallery images array
+                setFormData(prev => ({ ...prev, images: [...prev.images, publicUrl] }))
+            } else {
+                // Single main image
+                setFormData(prev => ({ ...prev, image_url: publicUrl }))
+            }
         } catch (error: any) {
             console.error('Upload failed:', error)
             alert(`Erreur d'upload : ${error.message || "Erreur inconnue"}`)
         } finally {
             setUploading(false)
         }
+    }
+
+    const removeGalleryImage = (indexToRemove: number) => {
+        setFormData(prev => ({
+            ...prev,
+            images: prev.images.filter((_, index) => index !== indexToRemove)
+        }))
     }
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -107,7 +123,7 @@ export default function ProjectsPage() {
 
             setIsFormOpen(false)
             setEditingProject(null)
-            setFormData({ title: "", category: "WEB DESIGN", status: "draft", description: "", link: "", image_url: "" })
+            setFormData({ title: "", category: "WEB DESIGN", status: "draft", description: "", link: "", image_url: "", images: [] })
             setImageFile(null)
             fetchProjects()
         } catch (error) {
@@ -130,7 +146,7 @@ export default function ProjectsPage() {
                 <button
                     onClick={() => {
                         setEditingProject(null)
-                        setFormData({ title: "", category: "WEB DESIGN", status: "draft", description: "", link: "", image_url: "" })
+                        setFormData({ title: "", category: "WEB DESIGN", status: "draft", description: "", link: "", image_url: "", images: [] })
                         setIsFormOpen(true)
                     }}
                     className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-sm tracking-wider uppercase rounded shadow-[0_0_15px_rgba(220,38,38,0.4)] flex items-center gap-2 transition-all"
@@ -212,27 +228,50 @@ export default function ProjectsPage() {
                                         {formData.category === "DESIGN GRAPHIQUE" ? (
                                             <div className="space-y-2">
                                                 <div className="grid grid-cols-3 gap-2">
-                                                    {/* Existing placeholder for gallery - fully implementing gallery logic would require array state management, keeping simple for this iteration */}
-                                                    {formData.image_url && (
-                                                        <div className="aspect-square rounded overflow-hidden border border-white/10 relative group">
-                                                            <img src={formData.image_url} className="w-full h-full object-cover" />
-                                                            <button type="button" onClick={() => setFormData({ ...formData, image_url: "" })} className="absolute top-1 right-1 bg-red-600 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"><X className="w-3 h-3 text-white" /></button>
+                                                    {/* Gallery images */}
+                                                    {formData.images.map((imgUrl, index) => (
+                                                        <div key={index} className="aspect-square rounded overflow-hidden border border-white/10 relative group">
+                                                            <img src={imgUrl} className="w-full h-full object-cover" alt={`Gallery ${index + 1}`} />
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => removeGalleryImage(index)}
+                                                                className="absolute top-1 right-1 bg-red-600 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                            >
+                                                                <X className="w-3 h-3 text-white" />
+                                                            </button>
+                                                            {index === 0 && (
+                                                                <span className="absolute bottom-1 left-1 bg-red-600 text-white text-[8px] px-1.5 py-0.5 rounded uppercase font-bold">Cover</span>
+                                                            )}
                                                         </div>
-                                                    )}
-                                                    <div className="aspect-square border-2 border-dashed border-white/10 rounded flex items-center justify-center hover:border-red-500/50 cursor-pointer transition-colors relative">
-                                                        <Plus className="w-6 h-6 text-neutral-600" />
+                                                    ))}
+                                                    {/* Add new image button */}
+                                                    <div className="aspect-square border-2 border-dashed border-white/10 rounded flex flex-col items-center justify-center hover:border-red-500/50 cursor-pointer transition-colors relative">
+                                                        {uploading ? (
+                                                            <div className="w-6 h-6 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
+                                                        ) : (
+                                                            <>
+                                                                <Plus className="w-6 h-6 text-neutral-600" />
+                                                                <span className="text-[8px] text-neutral-500 mt-1">Ajouter</span>
+                                                            </>
+                                                        )}
                                                         <input
                                                             type="file"
                                                             accept="image/*"
-                                                            onChange={(e) => {
-                                                                const file = e.target.files?.[0]
-                                                                if (file) handleImageUpload(file)
+                                                            multiple
+                                                            disabled={uploading}
+                                                            onChange={async (e) => {
+                                                                const files = e.target.files
+                                                                if (files) {
+                                                                    for (let i = 0; i < files.length; i++) {
+                                                                        await handleImageUpload(files[i], true)
+                                                                    }
+                                                                }
                                                             }}
-                                                            className="absolute inset-0 opacity-0 cursor-pointer"
+                                                            className="absolute inset-0 opacity-0 cursor-pointer disabled:cursor-not-allowed"
                                                         />
                                                     </div>
                                                 </div>
-                                                <p className="text-[10px] text-neutral-500">Ajoutez plusieurs images pour créer un carrousel.</p>
+                                                <p className="text-[10px] text-neutral-500">Sélectionnez plusieurs images. La première sera la couverture du carrousel.</p>
                                             </div>
                                         ) : (
                                             <div className="border-2 border-dashed border-white/10 rounded-lg p-4 text-center hover:border-red-500/50 transition-colors relative group h-[200px] flex flex-col items-center justify-center">
