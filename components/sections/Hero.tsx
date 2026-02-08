@@ -1,18 +1,23 @@
 "use client"
 
-import { useEffect, useState, useRef } from "react"
-import { motion, useScroll, useTransform, useSpring, useMotionValueEvent, AnimatePresence } from "framer-motion"
+import { useEffect, useState, useRef, useMemo } from "react"
+import { motion, useScroll, useTransform, useSpring, useMotionValueEvent } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { supabase } from "@/lib/supabase"
 import { MousePointer2 } from "lucide-react"
+import { getAnimationSettings, isLowPowerDevice } from "@/lib/performance"
 
-const FRAME_COUNT = 26
+const TOTAL_FRAMES = 26
 
 export function HeroSection() {
     const containerRef = useRef<HTMLDivElement>(null)
     const [isLoaded, setIsLoaded] = useState(false)
     const [currentFrame, setCurrentFrame] = useState(1)
+    const [isLowPower, setIsLowPower] = useState(false)
+
+    // Get optimized settings
+    const settings = useMemo(() => getAnimationSettings(), [])
 
     // Dynamic Content State
     const [heroContent, setHeroContent] = useState({
@@ -20,6 +25,11 @@ export function HeroSection() {
         subtitle: "Freelancer",
         role: "Architecte du Digital"
     })
+
+    // Detect device capabilities
+    useEffect(() => {
+        setIsLowPower(isLowPowerDevice())
+    }, [])
 
     // Fetch Settings
     useEffect(() => {
@@ -38,23 +48,26 @@ export function HeroSection() {
         fetchSettings()
     }, [])
 
-    // Preload Images
+    // Optimized frame loading - Load fewer frames on mobile
     useEffect(() => {
-        let loadedCount = 0
-        const images: HTMLImageElement[] = []
+        const framesToLoad = isLowPower
+            ? [1, 3, 6, 9, 12, 15, 18, 21, 24, 26]  // 10 frames for mobile
+            : Array.from({ length: TOTAL_FRAMES }, (_, i) => i + 1)  // All 26 for desktop
 
-        for (let i = 1; i <= FRAME_COUNT; i++) {
+        let loadedCount = 0
+        const totalToLoad = framesToLoad.length
+
+        framesToLoad.forEach(frameNum => {
             const img = new Image()
-            img.src = `/assets/hero-sequence/ezgif-frame-${i.toString().padStart(3, "0")}.png`
+            img.src = `/assets/hero-sequence/ezgif-frame-${frameNum.toString().padStart(3, "0")}.png`
             img.onload = () => {
                 loadedCount++
-                if (loadedCount === FRAME_COUNT) {
+                if (loadedCount === totalToLoad) {
                     setIsLoaded(true)
                 }
             }
-            images.push(img)
-        }
-    }, [])
+        })
+    }, [isLowPower])
 
     // Scroll Logic
     const { scrollYProgress } = useScroll({
@@ -66,7 +79,7 @@ export function HeroSection() {
     const smoothProgress = useSpring(scrollYProgress, { mass: 0.5, stiffness: 50, damping: 15 })
 
     // Map scroll progress (0..1) to frame index (1..26)
-    const frameIndex = useTransform(smoothProgress, [0, 1], [1, FRAME_COUNT])
+    const frameIndex = useTransform(smoothProgress, [0, 1], [1, TOTAL_FRAMES])
 
     // Opacity fades for text elements based on scroll
     // Opacity fades for text elements - Text stays visible longer (60% of scroll)
@@ -77,11 +90,19 @@ export function HeroSection() {
     // Fade to black at the very end to blend perfectly with next section
     const bottomShadeOpacity = useTransform(scrollYProgress, [0.85, 1], [0, 1])
 
-    // Update current frame state for rendering
+    // Update current frame state for rendering - optimized for low-power devices
     useMotionValueEvent(frameIndex, "change", (latest) => {
         const frame = Math.round(latest)
-        // Clamp between 1 and FRAME_COUNT
-        setCurrentFrame(Math.min(Math.max(frame, 1), FRAME_COUNT))
+        // For low-power devices, snap to nearest loaded frame
+        if (isLowPower) {
+            const loadedFrames = [1, 3, 6, 9, 12, 15, 18, 21, 24, 26]
+            const closest = loadedFrames.reduce((prev, curr) =>
+                Math.abs(curr - frame) < Math.abs(prev - frame) ? curr : prev
+            )
+            setCurrentFrame(closest)
+        } else {
+            setCurrentFrame(Math.min(Math.max(frame, 1), TOTAL_FRAMES))
+        }
     })
 
     return (
@@ -101,10 +122,16 @@ export function HeroSection() {
                         <img
                             src={`/assets/hero-sequence/ezgif-frame-${currentFrame.toString().padStart(3, "0")}.png`}
                             alt="Hero Animation"
+                            loading="eager"
+                            decoding="async"
                             className={cn(
-                                "w-full h-full object-cover transition-opacity duration-500",
+                                "w-full h-full object-cover transition-opacity duration-300",
                                 isLoaded ? "opacity-100" : "opacity-0"
                             )}
+                            style={{
+                                willChange: 'opacity',
+                                transform: 'translateZ(0)' // Force GPU layer
+                            }}
                         />
                         {/* Dramatic Gradients */}
                         <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-90 z-20" />

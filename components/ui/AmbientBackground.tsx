@@ -1,9 +1,10 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
 import { motion, useScroll, useTransform } from "framer-motion"
+import { getAnimationSettings, isLowPowerDevice } from "@/lib/performance"
 
-// Particle generator
+// Optimized particle generator
 const generateEmbers = (count: number) => {
     return Array.from({ length: count }).map((_, i) => ({
         id: i,
@@ -28,15 +29,23 @@ const CrowSilhouette = ({ className = "", style = {} }: { className?: string, st
 export function AmbientBackground() {
     const { scrollY } = useScroll()
     const [mounted, setMounted] = useState(false)
+    const [isLowPower, setIsLowPower] = useState(true) // Default to low power for SSR
+
+    // Get optimized settings
+    const settings = useMemo(() => getAnimationSettings(), [])
 
     useEffect(() => {
         setMounted(true)
+        setIsLowPower(isLowPowerDevice())
     }, [])
 
     const rotate = useTransform(scrollY, [0, 3000], [0, 120])
     const scale = useTransform(scrollY, [0, 1000], [1, 1.2])
 
-    const embers = mounted ? generateEmbers(50) : []
+    // Generate fewer embers on low-power devices
+    const embers = useMemo(() =>
+        mounted ? generateEmbers(isLowPower ? 15 : 50) : []
+        , [mounted, isLowPower])
 
     return (
         <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none bg-black">

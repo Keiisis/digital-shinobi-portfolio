@@ -1,7 +1,8 @@
 "use client"
 
-import { useEffect, useState, useRef } from "react"
+import { useEffect, useState, useMemo } from "react"
 import { motion, useScroll, useTransform } from "framer-motion"
+import { getAnimationSettings, isLowPowerDevice } from "@/lib/performance"
 
 const AkatsukiCloud = ({ className = "", style = {} }: { className?: string, style?: React.CSSProperties }) => (
     <svg viewBox="0 0 162 103" className={className} style={style}>
@@ -20,19 +21,27 @@ const AkatsukiCloud = ({ className = "", style = {} }: { className?: string, sty
 export function AkatsukiBackground() {
     const { scrollYProgress } = useScroll()
     const [mounted, setMounted] = useState(false)
+    const [isLowPower, setIsLowPower] = useState(true) // Default to low for SSR
+
+    // Get optimized settings
+    const settings = useMemo(() => getAnimationSettings(), [])
 
     useEffect(() => {
         setMounted(true)
+        setIsLowPower(isLowPowerDevice())
     }, [])
 
     // Smooth transforms
     const opacity = useTransform(scrollYProgress, [0, 0.2], [0, 1])
     const moonY = useTransform(scrollYProgress, [0, 1], [0, 100])
 
-    // Cloud movements (Parallax)
+    // Cloud movements (Parallax) - Only on high-power devices
     const cloudX1 = useTransform(scrollYProgress, [0, 1], ["100vw", "-100vw"])
     const cloudX2 = useTransform(scrollYProgress, [0, 1], ["-50vw", "150vw"])
     const cloudX3 = useTransform(scrollYProgress, [0, 1], ["120vw", "-20vw"])
+
+    // Generate rain drops - fewer on low-power devices
+    const rainCount = isLowPower ? 12 : 40
 
     return (
         <motion.div
@@ -52,9 +61,9 @@ export function AkatsukiBackground() {
                 <div className="absolute bottom-[30%] right-[25%] w-[25%] h-[25%] bg-black/10 rounded-full blur-md" />
             </motion.div>
 
-            {/* 2. RAIN (Amegakure vibe) */}
+            {/* 2. RAIN (Amegakure vibe) - Optimized count for device */}
             <div className="absolute inset-0 opacity-20">
-                {Array.from({ length: 40 }).map((_, i) => (
+                {Array.from({ length: rainCount }).map((_, i) => (
                     <div
                         key={i}
                         className="absolute w-[1px] bg-gradient-to-b from-transparent via-red-500/50 to-transparent animate-rain"
@@ -63,14 +72,15 @@ export function AkatsukiBackground() {
                             left: `${Math.random() * 100}%`,
                             top: `-${Math.random() * 20}%`,
                             animationDuration: `${Math.random() * 0.5 + 0.5}s`,
-                            animationDelay: `${Math.random() * 2}s`
+                            animationDelay: `${Math.random() * 2}s`,
+                            willChange: 'transform' // GPU optimization
                         }}
                     />
                 ))}
             </div>
 
-            {/* 3. FLOATING AKATSUKI CLOUDS */}
-            {mounted && (
+            {/* 3. FLOATING AKATSUKI CLOUDS - Only on high-power devices */}
+            {mounted && !isLowPower && (
                 <>
                     {/* Cloud 1 - Foreground Large */}
                     <motion.div
@@ -83,17 +93,17 @@ export function AkatsukiBackground() {
                     {/* Cloud 2 - Background Small */}
                     <motion.div
                         style={{ x: cloudX2 }}
-                        className="absolute bottom-[30%] left-[10%] w-40 h-24 opacity-60 blur-[1px]"
+                        className="absolute bottom-[30%] left-[10%] w-40 h-24 opacity-60"
                     >
-                        <AkatsukiCloud className="text-[#800000] drop-shadow-[0_0_10px_rgba(180,0,0,0.3)]" />
+                        <AkatsukiCloud className="text-[#800000]" />
                     </motion.div>
 
                     {/* Cloud 3 - Mid Huge */}
                     <motion.div
                         style={{ x: cloudX3 }}
-                        className="absolute top-[60%] right-[10%] w-96 h-60 opacity-90 blur-[0.5px]"
+                        className="absolute top-[60%] right-[10%] w-96 h-60 opacity-90"
                     >
-                        <AkatsukiCloud className="text-[#c41e1e] drop-shadow-[0_0_20px_rgba(255,0,0,0.5)]" />
+                        <AkatsukiCloud className="text-[#c41e1e]" />
                     </motion.div>
                 </>
             )}
