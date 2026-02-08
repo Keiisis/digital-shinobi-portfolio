@@ -37,9 +37,9 @@ export function ImageUpload({ value, onChange, label, className }: ImageUploadPr
             const { data } = supabase.storage.from('uploads').getPublicUrl(filePath)
 
             onChange(data.publicUrl)
-        } catch (error) {
-            console.error("Error uploading image:", error)
-            alert("Erreur lors de l'upload de l'image.")
+        } catch (error: any) {
+            console.error("DEBUG - Erreur Upload Detail:", error)
+            alert(`Erreur d'upload : ${error.message || "Erreur inconnue"}`)
         } finally {
             setUploading(false)
         }
