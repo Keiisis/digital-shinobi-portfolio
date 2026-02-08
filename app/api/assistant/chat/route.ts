@@ -17,6 +17,15 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Assistant settings not found' }, { status: 404 })
         }
 
+        // 1.5 Fetch Real Data from Database (Projects & Skills)
+        const [{ data: projects }, { data: skills }] = await Promise.all([
+            supabase.from('projects').select('title, category, description').eq('status', 'published').limit(10),
+            supabase.from('skills').select('name, category, level').limit(15)
+        ])
+
+        const projectsList = projects?.map(p => `- ${p.title} (${p.category}): ${p.description}`).join('\n') || "Aucun projet listé pour le moment."
+        const skillsList = skills?.map(s => `- ${s.name} (${s.category}) - Niveau: ${s.level}`).join('\n') || "Aucune compétence listée pour le moment."
+
         // 2. Prepare System Prompt with Knowledge Base
         const fullSystemPrompt = `
             ${settings.system_prompt}
@@ -26,11 +35,18 @@ export async function POST(request: NextRequest) {
             
             BASE DE CONNAISSANCES SUR KEVIN CHACHA:
             ${settings.knowledge_base}
+
+            MES RÉALISATIONS (PROJETS RÉELS):
+            ${projectsList}
+
+            MES COMPÉTENCES (ARSENAL):
+            ${skillsList}
             
             INSTRUCTIONS:
             - Réponds de manière concise et utile.
+            - Si on te demande tes projets, cite par exemple: ${projects?.slice(0, 3).map(p => p.title).join(', ')}.
             - Si on te demande qui tu es, présente-toi comme ${settings.name}.
-            - N'invente pas d'informations sur Kevin qui ne sont pas dans la base de connaissances.
+            - N'invente pas d'informations sur Kevin qui ne sont pas dans la base de connaissances ou la liste des projets.
             - Rappelle aux visiteurs qu'ils peuvent contacter Kevin via le formulaire s'ils ont des questions spécifiques.
             - Utilise des expressions chaleureuses typiques de l'Afrique de l'Ouest (Bénin) quand c'est approprié.
         `
