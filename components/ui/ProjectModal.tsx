@@ -13,11 +13,10 @@ interface ProjectModalProps {
 export function ProjectModal({ project, isOpen, onClose }: ProjectModalProps) {
     const [currentImageIndex, setCurrentImageIndex] = useState(0)
 
-    // Combine main image with gallery images if they exist
-    // If no specific gallery 'images' array, just use 'image_url' as single slide
+    // Use gallery images array if it exists and has items, otherwise fall back to single image_url
     const images = project?.images && project.images.length > 0
-        ? [project.image_url, ...project.images].filter(Boolean)
-        : [project?.image_url].filter(Boolean)
+        ? project.images
+        : project?.image_url ? [project.image_url] : []
 
     useEffect(() => {
         setCurrentImageIndex(0) // Reset on new project open
