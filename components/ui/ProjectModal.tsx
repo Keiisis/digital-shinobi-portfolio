@@ -108,7 +108,7 @@ export function ProjectModal({ project, isOpen, onClose }: ProjectModalProps) {
 
                                     {/* Dots Indicator */}
                                     <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10">
-                                        {images.map((_, idx) => (
+                                        {images.map((_: string, idx: number) => (
                                             <div
                                                 key={idx}
                                                 className={`h-1.5 rounded-full transition-all shadow-sm ${idx === currentImageIndex ? "bg-red-600 w-6" : "bg-white/30 w-1.5"}`}
