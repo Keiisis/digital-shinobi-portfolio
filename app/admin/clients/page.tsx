@@ -39,23 +39,22 @@ export default function AdminClients() {
     const handleImageUpload = async (file: File) => {
         setUploading(true)
         try {
-            // Check if logo is square-ish or handle resizing? For now just upload.
             const fileExt = file.name.split('.').pop()
-            const fileName = `partner_${Date.now()}.${fileExt}`
+            const fileName = `clients/partner_${Date.now()}.${fileExt}`
             const { error: uploadError } = await supabase.storage
-                .from('logos') // Reusing 'logos' bucket
+                .from('uploads')
                 .upload(fileName, file)
 
             if (uploadError) throw uploadError
 
             const { data: { publicUrl } } = supabase.storage
-                .from('logos')
+                .from('uploads')
                 .getPublicUrl(fileName)
 
             setNewClient(prev => ({ ...prev, logo_url: publicUrl }))
-        } catch (error) {
+        } catch (error: any) {
             console.error('Upload failed:', error)
-            alert("Erreur lors de l'upload du logo")
+            alert(`Erreur d'upload : ${error.message || "Erreur inconnue"}`)
         } finally {
             setUploading(false)
         }

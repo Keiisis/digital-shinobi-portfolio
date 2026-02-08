@@ -69,21 +69,21 @@ export default function ProjectsPage() {
         setUploading(true)
         try {
             const fileExt = file.name.split('.').pop()
-            const fileName = `${Date.now()}.${fileExt}`
+            const fileName = `projects/${Date.now()}.${fileExt}`
             const { error: uploadError } = await supabase.storage
-                .from('logos') // Using 'logos' bucket for now as it exists, ideally 'projects'
-                .upload(`projects/${fileName}`, file)
+                .from('uploads')
+                .upload(fileName, file)
 
             if (uploadError) throw uploadError
 
             const { data: { publicUrl } } = supabase.storage
-                .from('logos')
-                .getPublicUrl(`projects/${fileName}`)
+                .from('uploads')
+                .getPublicUrl(fileName)
 
             setFormData(prev => ({ ...prev, image_url: publicUrl }))
-        } catch (error) {
+        } catch (error: any) {
             console.error('Upload failed:', error)
-            alert("Erreur lors de l'upload de l'image")
+            alert(`Erreur d'upload : ${error.message || "Erreur inconnue"}`)
         } finally {
             setUploading(false)
         }
