@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils"
 import { supabase } from "@/lib/supabase"
 import { MousePointer2 } from "lucide-react"
 import { getAnimationSettings, isLowPowerDevice } from "@/lib/performance"
+import { useLanguage } from "@/app/context/LanguageContext"
 
 const TOTAL_FRAMES = 26
 
@@ -15,6 +16,7 @@ export function HeroSection() {
     const [isLoaded, setIsLoaded] = useState(false)
     const [currentFrame, setCurrentFrame] = useState(1)
     const [isLowPower, setIsLowPower] = useState(false)
+    const { t } = useLanguage()
 
     // Get optimized settings
     const settings = useMemo(() => getAnimationSettings(), [])
@@ -160,7 +162,7 @@ export function HeroSection() {
                     <div className="flex items-center gap-4 mb-4">
                         <div className="w-12 h-[1px] bg-red-600/50" />
                         <span className="font-mono text-xs md:text-sm text-red-500 tracking-[0.3em] uppercase animate-pulse">
-                            System Online
+                            {t("hero.system_online")}
                         </span>
                         <div className="w-12 h-[1px] bg-red-600/50" />
                     </div>
@@ -202,7 +204,7 @@ export function HeroSection() {
                             onClick={() => document.getElementById('portfolio')?.scrollIntoView({ behavior: 'smooth' })}
                             className="bg-red-600 hover:bg-red-700 text-white font-orbitron font-bold tracking-widest px-8 py-6 rounded-none skew-x-[-10deg] border border-red-500 shadow-[0_0_20px_rgba(220,38,38,0.4)] hover:shadow-[0_0_40px_rgba(220,38,38,0.6)] transition-all"
                         >
-                            <span className="skew-x-[10deg]">EXPLORER</span>
+                            <span className="skew-x-[10deg]">{t("hero.explore")}</span>
                         </Button>
 
                         <Button
@@ -210,7 +212,7 @@ export function HeroSection() {
                             variant="outline"
                             className="bg-transparent hover:bg-white/5 text-white border-white/20 font-orbitron font-bold tracking-widest px-8 py-6 rounded-none skew-x-[-10deg] hover:border-red-500/50 hover:text-red-500 transition-all"
                         >
-                            <span className="skew-x-[10deg]">ME CONTACTER</span>
+                            <span className="skew-x-[10deg]">{t("hero.contact")}</span>
                         </Button>
                     </div>
 
@@ -222,7 +224,7 @@ export function HeroSection() {
                     className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 z-30"
                 >
                     <span className="text-[10px] items-center gap-2 font-mono text-neutral-500 uppercase tracking-widest flex">
-                        <MousePointer2 className="w-3 h-3" /> Scroll to Initialize
+                        <MousePointer2 className="w-3 h-3" /> {t("hero.scroll")}
                     </span>
                     <div className="w-px h-12 bg-gradient-to-b from-red-500 to-transparent/10" />
                 </motion.div>

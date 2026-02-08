@@ -5,10 +5,24 @@ import { motion, AnimatePresence } from "framer-motion"
 import { MessageSquare, Phone, X, Send, Mic, MicOff, Volume2, VolumeX, Loader2, Bot, Sparkles, PhoneOff } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { cn } from "@/lib/utils"
+// Import useLanguage hook
+import { useLanguage } from "@/app/context/LanguageContext"
 
 interface Message {
     role: 'user' | 'assistant'
     content: string
+}
+
+// Helper to get locale for speech API based on app language
+const getSpeechLocale = (lang: string) => {
+    switch (lang) {
+        case 'en': return 'en-US'
+        case 'es': return 'es-ES'
+        case 'de': return 'de-DE'
+        case 'it': return 'it-IT'
+        case 'pt': return 'pt-BR'
+        default: return 'fr-FR'
+    }
 }
 
 export function KevinAssistant() {
@@ -27,6 +41,9 @@ export function KevinAssistant() {
     const scrollRef = useRef<HTMLDivElement>(null)
     const recognitionRef = useRef<any>(null)
     const synthRef = useRef<SpeechSynthesis | null>(null)
+
+    // Get language and translation function
+    const { t, language } = useLanguage()
 
     // Load settings and visitor ID
     useEffect(() => {
@@ -51,7 +68,8 @@ export function KevinAssistant() {
             if (SpeechRecognition) {
                 recognitionRef.current = new SpeechRecognition()
                 recognitionRef.current.continuous = false
-                recognitionRef.current.lang = 'fr-FR'
+                // Set language dynamically
+                recognitionRef.current.lang = getSpeechLocale(language)
 
                 recognitionRef.current.onresult = (event: any) => {
                     const transcript = event.results[0][0].transcript
@@ -74,7 +92,14 @@ export function KevinAssistant() {
                 recognitionRef.current.onstart = () => setIsListening(true)
             }
         }
-    }, [mode, isMuted, isTyping])
+    }, [mode, isMuted, isTyping, language]) // Added language dependency
+
+    // Update recognition language when language changes
+    useEffect(() => {
+        if (recognitionRef.current) {
+            recognitionRef.current.lang = getSpeechLocale(language)
+        }
+    }, [language])
 
     useEffect(() => {
         if (scrollRef.current) {
@@ -89,17 +114,23 @@ export function KevinAssistant() {
         synthRef.current.cancel()
 
         const utterance = new SpeechSynthesisUtterance(text)
-        utterance.lang = 'fr-FR'
+        const locale = getSpeechLocale(language)
+        utterance.lang = locale
 
-        // Try to find a warm masculine voice
+        // Try to find a suitable voice for the locale
         const voices = synthRef.current.getVoices()
-        const masculineVoice = voices.find(v => (v.name.toLowerCase().includes('male') || v.name.toLowerCase().includes('fr-fr')) && !v.name.toLowerCase().includes('google'))
-            || voices.find(v => v.lang.includes('fr'))
+        // Try to find a 'Google' or 'Microsoft' voice for the language first as they are usually better
+        let voice = voices.find(v => v.lang === locale && (v.name.includes('Google') || v.name.includes('Microsoft')))
 
-        if (masculineVoice) utterance.voice = masculineVoice
+        // If not found, try any voice for the language
+        if (!voice) {
+            voice = voices.find(v => v.lang.startsWith(language))
+        }
 
-        utterance.pitch = 0.9
-        utterance.rate = 0.95
+        if (voice) utterance.voice = voice
+
+        utterance.pitch = 0.9 // Slightly deeper
+        utterance.rate = 1.0 // Normal speed
 
         utterance.onend = () => {
             // Restart listening after assistant finishes speaking
@@ -109,7 +140,7 @@ export function KevinAssistant() {
         }
 
         synthRef.current.speak(utterance)
-    }, [isSpeakerOn, mode, isMuted])
+    }, [isSpeakerOn, mode, isMuted, language])
 
     const handleSendMessage = async (text: string) => {
         if (!text.trim()) return
@@ -129,7 +160,8 @@ export function KevinAssistant() {
                 body: JSON.stringify({
                     messages: [...messages, userMsg],
                     visitorId,
-                    type: mode
+                    type: mode,
+                    language: language // Pass language to backend to ensure response is in correct language
                 })
             })
 
@@ -152,7 +184,9 @@ export function KevinAssistant() {
         setIsOpen(true)
         setMode('voice')
         setIsCalling(true)
-        const welcome = `Bonjour au nom de Kevin CHACHA ! Je suis ${settings?.name || 'Kevin Assistant'}. Content d'entendre votre voix. Comment puis-je vous aider aujourd'hui ?`
+        // Dynamic welcome message
+        const welcomeTemplate = t("assistant.speech.welcome")
+        const welcome = welcomeTemplate.replace("{name}", settings?.name || 'Kevin Assistant')
         speak(welcome)
     }
 
@@ -209,7 +243,7 @@ export function KevinAssistant() {
                                     <div className="flex items-center gap-1">
                                         <div className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" />
                                         <span className="text-[10px] text-red-100 uppercase tracking-widest font-bold">
-                                            {mode === 'voice' ? 'Appel en cours...' : 'Système de chat actif'}
+                                            {mode === 'voice' ? t("assistant.call.active") : t("assistant.chat.active")}
                                         </span>
                                     </div>
                                 </div>
@@ -230,16 +264,16 @@ export function KevinAssistant() {
                                                     <Sparkles className="w-10 h-10 text-red-600" />
                                                 </div>
                                                 <div className="space-y-2">
-                                                    <h4 className="font-orbitron text-red-500 font-bold text-lg italic">"AKWABA !"</h4>
+                                                    <h4 className="font-orbitron text-red-500 font-bold text-lg italic">"{t("assistant.welcome.title")}"</h4>
                                                     <p className="text-sm text-neutral-400 font-rajdhani leading-relaxed">
-                                                        Je suis l'assistant personnel de Kevin. Je connais parfaitement ses projets et sa technologie. Comment puis-je vous aider ?
+                                                        {t("assistant.welcome.text")}
                                                     </p>
                                                 </div>
                                                 <button
                                                     onClick={startCall}
                                                     className="flex items-center gap-2 px-6 py-2.5 bg-red-600/10 border border-red-600/30 rounded-full text-red-500 hover:bg-red-600 hover:text-white transition-all font-bold text-xs uppercase tracking-widest shadow-lg"
                                                 >
-                                                    <Phone className="w-4 h-4" /> Passer un Appel Vocal
+                                                    <Phone className="w-4 h-4" /> {t("assistant.call.start")}
                                                 </button>
                                             </div>
                                         )}
@@ -257,14 +291,14 @@ export function KevinAssistant() {
                                                     {m.content}
                                                 </div>
                                                 <span className="text-[9px] text-neutral-600 mt-1 uppercase font-mono">
-                                                    {m.role === 'user' ? 'Visiteur' : (settings?.name || 'Assistant')}
+                                                    {m.role === 'user' ? t("assistant.visitor") : (settings?.name || 'Assistant')}
                                                 </span>
                                             </div>
                                         ))}
                                         {isTyping && (
                                             <div className="flex items-center gap-3 text-neutral-500 text-xs italic bg-neutral-900/40 p-3 rounded-2xl w-fit border border-white/5">
                                                 <Loader2 className="w-4 h-4 animate-spin text-red-500" />
-                                                L'assistant traite votre demande...
+                                                {t("assistant.typing")}
                                             </div>
                                         )}
                                     </div>
@@ -275,7 +309,7 @@ export function KevinAssistant() {
                                         <input
                                             value={input}
                                             onChange={(e) => setInput(e.target.value)}
-                                            placeholder="Tapez votre message ici..."
+                                            placeholder={t("assistant.input.placeholder")}
                                             className="flex-1 bg-neutral-900/80 border border-white/10 rounded-2xl px-5 py-3 text-sm text-white focus:border-red-600 outline-none transition-all placeholder:text-neutral-600 shadow-inner"
                                         />
                                         <button type="submit" className="w-12 h-12 flex items-center justify-center bg-red-600 text-white rounded-2xl hover:bg-red-700 transition-all shadow-lg hover:shadow-red-600/30 group">
@@ -289,7 +323,7 @@ export function KevinAssistant() {
                                         <h3 className="text-2xl font-orbitron font-bold text-white tracking-widest italic">{settings?.name || 'Kevin Assistant'}</h3>
                                         <p className="text-xs text-red-500 font-mono flex items-center justify-center gap-2">
                                             <span className="w-2 h-2 bg-red-600 rounded-full animate-ping" />
-                                            COMMUNICATION SÉCURISÉE
+                                            {t("assistant.secure")}
                                         </p>
                                     </div>
 
@@ -330,7 +364,7 @@ export function KevinAssistant() {
 
                                     <div className="text-center space-y-4">
                                         <p className="text-sm text-neutral-400 font-rajdhani italic">
-                                            {isTyping ? "Kevin Assistant vous répond..." : isListening ? "Dites quelque chose..." : "Appuyez sur le micro pour parler"}
+                                            {isTyping ? t("assistant.typing") : isListening ? t("assistant.listening") : t("assistant.mic.hint")}
                                         </p>
 
                                         {/* Call Controls */}
@@ -370,7 +404,7 @@ export function KevinAssistant() {
                                             onClick={() => setMode('chat')}
                                             className="text-[10px] text-neutral-600 uppercase tracking-widest font-bold hover:text-white transition-colors flex items-center gap-2 mx-auto"
                                         >
-                                            <MessageSquare className="w-3 h-3" /> Retour au chat textuel
+                                            <MessageSquare className="w-3 h-3" /> {t("assistant.chat.back")}
                                         </button>
                                     </div>
                                 </div>
@@ -391,7 +425,7 @@ export function KevinAssistant() {
                         whileTap={{ scale: 0.9 }}
                         onClick={startCall}
                         className="w-14 h-14 rounded-full bg-white text-red-600 shadow-2xl flex items-center justify-center border-2 border-red-600"
-                        title="Appel avec Assistant"
+                        title={t("assistant.call.tooltip")}
                     >
                         <Phone className="w-6 h-6" />
                         <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-600 rounded-full">

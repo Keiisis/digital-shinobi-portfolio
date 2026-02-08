@@ -4,10 +4,10 @@ import './globals.css'
 import { cn } from '@/lib/utils'
 import { createClient } from '@supabase/supabase-js'
 
-// Initialize Supabase for server-side metadata generation
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-const supabase = createClient(supabaseUrl, supabaseKey)
+// Initialize Supabase only if env vars are present
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null
 
 const orbitron = Orbitron({
   subsets: ['latin'],
@@ -33,19 +33,24 @@ import { CustomCursor } from "@/components/ui/CustomCursor"
 import { PagePreloader } from "@/components/ui/PagePreloader"
 import { KevinAssistant } from "@/components/ui/KevinAssistant"
 
-
 export async function generateMetadata(): Promise<Metadata> {
-  // Fetch site settings for dynamic metadata
-  const { data } = await supabase.from('site_settings').select('*')
   let favicon = '/favicon.ico' // Default
 
-  if (data) {
-    const settings = data.reduce((acc: any, item: any) => {
-      acc[item.key] = item.value
-      return acc
-    }, {})
-    if (settings.site_favicon) {
-      favicon = settings.site_favicon
+  if (supabase) {
+    try {
+      // Fetch site settings for dynamic metadata
+      const { data } = await supabase.from('site_settings').select('*')
+      if (data && data.length > 0) {
+        const settings = data.reduce((acc: any, item: any) => {
+          acc[item.key] = item.value
+          return acc
+        }, {})
+        if (settings.site_favicon) {
+          favicon = settings.site_favicon
+        }
+      }
+    } catch (e) {
+      console.error('Error fetching metadata settings:', e)
     }
   }
 

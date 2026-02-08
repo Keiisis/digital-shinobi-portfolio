@@ -6,6 +6,7 @@ import Image from "next/image"
 import { supabase } from "@/lib/supabase"
 import { ProjectModal } from "@/components/ui/ProjectModal"
 import { ProjectReactions } from "@/components/ui/ProjectReactions"
+import { useLanguage } from "@/app/context/LanguageContext"
 
 interface Project {
     id: string
@@ -42,6 +43,7 @@ export function Portfolio() {
     const [projects, setProjects] = useState<Project[]>([])
     const [loading, setLoading] = useState(true)
     const [selectedProject, setSelectedProject] = useState<Project | null>(null)
+    const { t } = useLanguage()
 
     useEffect(() => {
         const fetchProjects = async () => {
@@ -71,7 +73,7 @@ export function Portfolio() {
                     className="text-center mb-12"
                 >
                     <h2 className="font-heading text-3xl font-bold text-[#E50914] tracking-[0.2em] mb-12 uppercase drop-shadow-[0_0_15px_rgba(229,9,20,0.8)]">
-                        Mes Missions
+                        {t("portfolio.title")}
                     </h2>
 
                     {/* Tabs matching ref: Red underline for active, subtle text for others */}
@@ -83,7 +85,7 @@ export function Portfolio() {
                                 className={`pb-4 px-2 text-[10px] md:text-xs font-heading tracking-widest transition-all relative ${activeTab === filter ? "text-white" : "text-neutral-500 hover:text-white"
                                     }`}
                             >
-                                {filter}
+                                {filter === "TOUT" ? t("portfolio.all").toUpperCase() : filter}
                                 {activeTab === filter && (
                                     <motion.div
                                         layoutId="activeTab"
@@ -103,7 +105,7 @@ export function Portfolio() {
                             <div key={i} className="aspect-[16/9] bg-neutral-900 animate-pulse rounded-lg" />
                         ))
                     ) : filteredProjects.length === 0 ? (
-                        <div className="col-span-full text-center text-neutral-500 py-12">Aucune mission trouvée dans cette catégorie.</div>
+                        <div className="col-span-full text-center text-neutral-500 py-12">{t("portfolio.empty")}</div>
                     ) : (
                         filteredProjects.map((project, index) => {
                             const imageUrl = getProjectImage(project)

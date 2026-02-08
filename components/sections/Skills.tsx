@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { motion } from "framer-motion"
 import { Monitor, PenTool, Cpu, Users, FileText, Video, Share2, Code, Zap, CheckCircle, Globe, Smartphone, Database, Lock, Server } from "lucide-react"
 import { supabase } from "@/lib/supabase"
+import { useLanguage } from "@/app/context/LanguageContext"
 
 // Map icon names to components (expanded list)
 const iconMap: Record<string, any> = {
@@ -13,6 +14,7 @@ const iconMap: Record<string, any> = {
 
 export function Skills() {
     const [skills, setSkills] = useState<any[]>([])
+    const { t } = useLanguage()
 
     useEffect(() => {
         const fetchSkills = async () => {
@@ -35,7 +37,7 @@ export function Skills() {
                     className="text-center mb-16"
                 >
                     <h2 className="font-heading text-2xl md:text-3xl font-bold text-white tracking-[0.2em] mb-2 uppercase drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]">
-                        Mon Arsenal
+                        {t("skills.title")}
                     </h2>
                 </motion.div>
 

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { motion } from "framer-motion"
 import { supabase } from "@/lib/supabase"
+import { useLanguage } from "@/app/context/LanguageContext"
 
 interface Client {
     id: string
@@ -13,6 +14,7 @@ interface Client {
 
 export function Clients() {
     const [clients, setClients] = useState<Client[]>([])
+    const { t } = useLanguage()
 
     useEffect(() => {
         const fetchClients = async () => {
@@ -37,10 +39,10 @@ export function Clients() {
         <section id="clients" className="py-24 bg-neutral-950 overflow-hidden relative border-t border-white/5">
             <div className="container mx-auto px-4 mb-16 text-center">
                 <h3 className="text-red-600 font-heading tracking-[0.2em] text-sm uppercase mb-3 drop-shadow-[0_0_10px_rgba(220,38,38,0.5)]">
-                    CLANS & ORGANISATIONS
+                    {t("clients.subtitle")}
                 </h3>
                 <h2 className="font-heading text-3xl md:text-4xl font-bold text-white uppercase tracking-wider">
-                    ILS ONT REJOINT LA MISSION
+                    {t("clients.title")}
                 </h2>
             </div>
 

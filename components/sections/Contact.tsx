@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Send, Zap, Mail, Phone, Lock, Terminal } from "lucide-react"
 import { supabase } from "@/lib/supabase"
+import { useLanguage } from "@/app/context/LanguageContext"
 
 export function Contact() {
     const [formState, setFormState] = useState({
@@ -12,6 +13,7 @@ export function Contact() {
         domain: "",
         message: ""
     })
+    const { t } = useLanguage()
 
     const [status, setStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle')
     const [settings, setSettings] = useState<any>({
@@ -78,11 +80,11 @@ export function Contact() {
                     className="text-center mb-16"
                 >
                     <h2 className="font-heading text-3xl font-bold text-white tracking-[0.2em] mb-4 uppercase drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]">
-                        Canal Sécurisé
+                        {t("contact.title")}
                     </h2>
                     <div className="flex items-center justify-center gap-2 text-red-500 font-mono text-xs animate-pulse">
                         <span className="w-2 h-2 bg-red-500 rounded-full" />
-                        TRANSMISSION UPLINK READY
+                        {t("contact.subtitle")}
                     </div>
                 </motion.div>
 
@@ -118,19 +120,19 @@ export function Contact() {
                                         >
                                             <Send className="w-8 h-8" />
                                         </motion.div>
-                                        <h3 className="text-xl font-bold text-white font-heading tracking-widest uppercase mb-2">Transmission Reçue</h3>
-                                        <p className="text-neutral-400 font-mono text-sm">Le Kage a reçu votre message crypté.</p>
+                                        <h3 className="text-xl font-bold text-white font-heading tracking-widest uppercase mb-2">{t("contact.success_title")}</h3>
+                                        <p className="text-neutral-400 font-mono text-sm">{t("contact.success_text")}</p>
                                     </motion.div>
                                 )}
                             </AnimatePresence>
 
                             <div>
                                 <label className="block text-[10px] font-orbitron tracking-widest text-red-500 mb-2 uppercase flex items-center gap-2">
-                                    <Terminal className="w-3 h-3" /> Identité du Séndeur
+                                    <Terminal className="w-3 h-3" /> {t("contact.name_label")}
                                 </label>
                                 <input
                                     type="text"
-                                    placeholder="Nom & Prénom"
+                                    placeholder={t("contact.name_placeholder")}
                                     value={formState.name}
                                     onChange={(e) => setFormState({ ...formState, name: e.target.value })}
                                     className="w-full bg-neutral-900/50 border border-white/10 rounded p-3 text-white focus:border-red-500 focus:outline-none focus:bg-red-900/10 transition-all font-mono text-sm placeholder:text-neutral-700"
@@ -141,7 +143,7 @@ export function Contact() {
 
                             <div>
                                 <label className="block text-[10px] font-orbitron tracking-widest text-red-500 mb-2 uppercase flex items-center gap-2">
-                                    <Mail className="w-3 h-3" /> Email de Contact
+                                    <Mail className="w-3 h-3" /> {t("contact.email_label")}
                                 </label>
                                 <input
                                     type="email"
@@ -156,7 +158,7 @@ export function Contact() {
 
                             <div>
                                 <label className="block text-[10px] font-orbitron tracking-widest text-red-500 mb-2 uppercase flex items-center gap-2">
-                                    <Zap className="w-3 h-3" /> Domaine de Mission
+                                    <Zap className="w-3 h-3" /> {t("contact.domain_label")}
                                 </label>
                                 <select
                                     value={formState.domain}
@@ -164,21 +166,21 @@ export function Contact() {
                                     className="w-full bg-neutral-900/50 border border-white/10 rounded p-3 text-white focus:border-red-500 focus:outline-none focus:bg-red-900/10 transition-all font-mono text-sm"
                                     disabled={status === 'sending'}
                                 >
-                                    <option value="" className="bg-black">Séléctionner une fréquence...</option>
-                                    <option value="design" className="bg-black">Design Graphique</option>
-                                    <option value="web" className="bg-black">Développement Web</option>
-                                    <option value="automation" className="bg-black">Automatisation</option>
-                                    <option value="other" className="bg-black">Autre (Classifié)</option>
+                                    <option value="" className="bg-black">{t("contact.domain_placeholder")}</option>
+                                    <option value="design" className="bg-black">{t("contact.domain_design")}</option>
+                                    <option value="web" className="bg-black">{t("contact.domain_web")}</option>
+                                    <option value="automation" className="bg-black">{t("contact.domain_automation")}</option>
+                                    <option value="other" className="bg-black">{t("contact.domain_other")}</option>
                                 </select>
                             </div>
 
                             <div>
                                 <label className="block text-[10px] font-orbitron tracking-widest text-red-500 mb-2 uppercase flex items-center gap-2">
-                                    <Lock className="w-3 h-3" /> Données Cryptées
+                                    <Lock className="w-3 h-3" /> {t("contact.message_label")}
                                 </label>
                                 <textarea
                                     rows={4}
-                                    placeholder="Votre message..."
+                                    placeholder={t("contact.message_placeholder")}
                                     value={formState.message}
                                     onChange={(e) => setFormState({ ...formState, message: e.target.value })}
                                     className="w-full bg-neutral-900/50 border border-white/10 rounded p-3 text-white focus:border-red-500 focus:outline-none focus:bg-red-900/10 transition-all font-mono text-sm placeholder:text-neutral-700 resize-none"
@@ -194,14 +196,14 @@ export function Contact() {
                             >
                                 <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20" />
                                 <span className="relative flex items-center justify-center gap-3">
-                                    {status === 'sending' ? 'CRYPTAGE EN COURS...' : 'INITIALISER UPLINK'}
+                                    {status === 'sending' ? t("contact.submit_sending") : t("contact.submit_idle")}
                                     {status !== 'sending' && <Send className="w-4 h-4 group-hover:translate-x-1 transition-transform" />}
                                 </span>
                             </button>
 
                             {status === 'error' && (
                                 <p className="text-red-500 text-xs text-center font-mono mt-2">
-                                    ERREUR CRITIQUE. Le canal est brouillé. Réessayez.
+                                    {t("contact.error")}
                                 </p>
                             )}
                         </form>
@@ -216,7 +218,7 @@ export function Contact() {
                     >
                         <div className="space-y-6">
                             <h3 className="font-heading text-xl text-white uppercase tracking-wider mb-6 border-l-4 border-red-500 pl-4">
-                                Options de Connexion
+                                {t("contact.options_title")}
                             </h3>
 
                             {/* WhatsApp Button */}
@@ -234,10 +236,10 @@ export function Contact() {
                                         </div>
                                         <div>
                                             <div className="text-emerald-500 font-bold font-heading tracking-wider uppercase text-sm mb-1">
-                                                Liaison Directe
+                                                {t("contact.whatsapp_title")}
                                             </div>
                                             <div className="text-white font-mono text-xs">
-                                                Rejoindre le signal WhatsApp
+                                                {t("contact.whatsapp_text")}
                                             </div>
                                         </div>
                                     </div>
@@ -254,7 +256,7 @@ export function Contact() {
                                         <Mail className="w-5 h-5" />
                                     </div>
                                     <div className="overflow-hidden">
-                                        <div className="text-[10px] font-orbitron text-neutral-500 uppercase tracking-widest mb-1">Canal Mail</div>
+                                        <div className="text-[10px] font-orbitron text-neutral-500 uppercase tracking-widest mb-1">{t("contact.mail_channel")}</div>
                                         <div className="font-mono text-white text-sm group-hover:text-red-400 transition-colors truncate">{settings.contact_email}</div>
                                     </div>
                                 </div>
@@ -264,7 +266,7 @@ export function Contact() {
                                         <Phone className="w-5 h-5" />
                                     </div>
                                     <div>
-                                        <div className="text-[10px] font-orbitron text-neutral-500 uppercase tracking-widest mb-1">Fréquence Vocale</div>
+                                        <div className="text-[10px] font-orbitron text-neutral-500 uppercase tracking-widest mb-1">{t("contact.voice_freq")}</div>
                                         <div className="font-mono text-white text-sm group-hover:text-red-400 transition-colors">{settings.contact_phone}</div>
                                     </div>
                                 </div>

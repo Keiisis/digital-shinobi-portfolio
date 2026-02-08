@@ -5,6 +5,7 @@ import { motion } from "framer-motion"
 import Image from "next/image"
 import { supabase } from "@/lib/supabase"
 import { Eye, Trophy } from "lucide-react"
+import { useLanguage } from "@/app/context/LanguageContext"
 
 interface TopProject {
     id: string
@@ -28,6 +29,7 @@ const REACTION_EMOJIS: { [key: string]: string } = {
 export function Leaderboard() {
     const [topProjects, setTopProjects] = useState<TopProject[]>([])
     const [loading, setLoading] = useState(true)
+    const { t } = useLanguage()
 
     useEffect(() => {
         const fetchTopProjects = async () => {
@@ -146,11 +148,11 @@ export function Leaderboard() {
                     <div className="inline-flex items-center gap-3 mb-4">
                         <Trophy className="w-8 h-8 text-yellow-500" />
                         <h2 className="font-heading text-3xl font-bold text-white tracking-[0.2em] uppercase">
-                            Top Missions
+                            {t("leaderboard.title")}
                         </h2>
                         <Trophy className="w-8 h-8 text-yellow-500" />
                     </div>
-                    <p className="text-neutral-500 font-mono text-sm">Les projets les plus populaires</p>
+                    <p className="text-neutral-500 font-mono text-sm">{t("leaderboard.subtitle")}</p>
                 </motion.div>
 
                 {/* Podium */}

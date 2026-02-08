@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { supabase } from "@/lib/supabase"
 import { Eye } from "lucide-react"
+import { useLanguage } from "@/app/context/LanguageContext"
 
 // Reaction types with emojis
 const REACTIONS = [
@@ -47,6 +48,7 @@ export function ProjectReactions({ projectId, compact = false }: ProjectReaction
     const [views, setViews] = useState(0)
     const [showPicker, setShowPicker] = useState(false)
     const [isLoading, setIsLoading] = useState(true)
+    const { t } = useLanguage()
 
     // Fetch initial data
     const fetchData = useCallback(async () => {
@@ -229,7 +231,7 @@ export function ProjectReactions({ projectId, compact = false }: ProjectReaction
                 {/* Left: Views */}
                 <div className="flex items-center gap-2 text-neutral-400 text-sm">
                     <Eye className="w-4 h-4" />
-                    <span>{views} vue{views !== 1 ? 's' : ''}</span>
+                    <span>{views} {t("common.views")}</span>
                 </div>
 
                 {/* Right: Reactions summary */}
@@ -248,7 +250,7 @@ export function ProjectReactions({ projectId, compact = false }: ProjectReaction
                                 </motion.span>
                             ))}
                         </div>
-                        <span>{totalReactions} réaction{totalReactions !== 1 ? 's' : ''}</span>
+                        <span>{totalReactions} {t("common.reactions")}</span>
                     </div>
                 )}
             </div>

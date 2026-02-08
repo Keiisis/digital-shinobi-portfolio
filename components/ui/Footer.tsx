@@ -5,9 +5,11 @@ import { motion } from "framer-motion"
 import { supabase } from "@/lib/supabase"
 import Link from "next/link"
 import { ExternalLink, Github, Linkedin, Twitter, Instagram, Shield } from "lucide-react"
+import { useLanguage } from "@/app/context/LanguageContext"
 
 export function Footer() {
     const [socials, setSocials] = useState<any[]>([])
+    const { t } = useLanguage()
 
     // Placeholder for future dynamic socials if we add a table
     const socialLinks = [
@@ -31,7 +33,7 @@ export function Footer() {
                             DIGITAL <span className="text-red-500 mx-1">{'>'}</span> SHINOBI
                         </Link>
                         <p className="text-neutral-400 text-sm max-w-sm font-light leading-relaxed">
-                            Architecte digital spécialisé dans la création d'expériences web immersives et de systèmes automatisés. Votre vision, ma mission.
+                            {t("footer.description")}
                         </p>
                         <div className="flex gap-4">
                             {socialLinks.map((social) => (
@@ -50,27 +52,27 @@ export function Footer() {
 
                     {/* Navigation */}
                     <div>
-                        <h4 className="font-heading text-white uppercase tracking-widest text-sm mb-6 border-l-2 border-red-500 pl-3">Navigation</h4>
+                        <h4 className="font-heading text-white uppercase tracking-widest text-sm mb-6 border-l-2 border-red-500 pl-3">{t("footer.nav.title")}</h4>
                         <ul className="space-y-3 text-sm text-neutral-500 font-mono">
-                            <li><a href="#hero" className="hover:text-red-500 transition-colors hover:pl-2 duration-300 block">AccueilBase</a></li>
-                            <li><a href="#skills" className="hover:text-red-500 transition-colors hover:pl-2 duration-300 block">Arsenal</a></li>
-                            <li><a href="#portfolio" className="hover:text-red-500 transition-colors hover:pl-2 duration-300 block">Missions</a></li>
-                            <li><a href="#contact" className="hover:text-red-500 transition-colors hover:pl-2 duration-300 block">Transmission</a></li>
+                            <li><a href="#hero" className="hover:text-red-500 transition-colors hover:pl-2 duration-300 block">{t("nav.home")}</a></li>
+                            <li><a href="#skills" className="hover:text-red-500 transition-colors hover:pl-2 duration-300 block">{t("nav.skills")}</a></li>
+                            <li><a href="#portfolio" className="hover:text-red-500 transition-colors hover:pl-2 duration-300 block">{t("nav.portfolio")}</a></li>
+                            <li><a href="#contact" className="hover:text-red-500 transition-colors hover:pl-2 duration-300 block">{t("nav.contact")}</a></li>
                         </ul>
                     </div>
 
                     {/* Legal */}
                     <div>
-                        <h4 className="font-heading text-white uppercase tracking-widest text-sm mb-6 border-l-2 border-red-500 pl-3">Légal</h4>
+                        <h4 className="font-heading text-white uppercase tracking-widest text-sm mb-6 border-l-2 border-red-500 pl-3">{t("footer.legal.title")}</h4>
                         <ul className="space-y-3 text-sm text-neutral-500 font-mono">
                             <li>
                                 <Link href="/mentions-legales" className="hover:text-red-500 transition-colors flex items-center gap-2">
-                                    <Shield className="w-3 h-3" /> Mentions Légales
+                                    <Shield className="w-3 h-3" /> {t("footer.legal.mentions")}
                                 </Link>
                             </li>
                             <li>
                                 <Link href="/admin" className="hover:text-red-500 transition-colors flex items-center gap-2">
-                                    <ExternalLink className="w-3 h-3" /> Espace Kage
+                                    <ExternalLink className="w-3 h-3" /> {t("footer.legal.admin")}
                                 </Link>
                             </li>
                         </ul>
@@ -79,8 +81,8 @@ export function Footer() {
 
                 {/* Bottom Bar */}
                 <div className="pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-4 text-[10px] text-neutral-600 font-mono uppercase tracking-wider">
-                    <p>© {new Date().getFullYear()} DIGITAL SHINOBI. Tous droits réservés.</p>
-                    <p>Conçu & Développé par Kevin Chacha</p>
+                    <p>© {new Date().getFullYear()} DIGITAL SHINOBI. {t("footer.rights")}</p>
+                    <p>{t("footer.credit")}</p>
                 </div>
             </div>
         </footer>

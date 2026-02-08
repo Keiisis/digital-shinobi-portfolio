@@ -5,6 +5,7 @@ import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { X, ChevronLeft, ChevronRight, ExternalLink } from "lucide-react"
 import { ProjectReactions } from "@/components/ui/ProjectReactions"
+import { useLanguage } from "@/app/context/LanguageContext"
 
 interface ProjectModalProps {
     project: any
@@ -14,6 +15,7 @@ interface ProjectModalProps {
 
 export function ProjectModal({ project, isOpen, onClose }: ProjectModalProps) {
     const [currentImageIndex, setCurrentImageIndex] = useState(0)
+    const { t } = useLanguage()
 
     // Use gallery images array if it exists and has items, otherwise fall back to single image_url
     const images = project?.images && project.images.length > 0
@@ -139,7 +141,7 @@ export function ProjectModal({ project, isOpen, onClose }: ProjectModalProps) {
                             {project?.id && <ProjectReactions projectId={project.id} />}
 
                             <div className="prose prose-invert prose-sm text-neutral-400 mb-8 font-sans leading-relaxed text-sm md:text-base">
-                                <p>{project.description || "Aucune description disponible pour ce projet."}</p>
+                                <p>{project.description || t("portfolio.no_description")}</p>
                             </div>
 
                             <div className="mt-auto space-y-4 pb- safe-area-bottom">
@@ -159,8 +161,8 @@ export function ProjectModal({ project, isOpen, onClose }: ProjectModalProps) {
                                         rel="noreferrer"
                                         className="w-full flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white font-bold py-3 md:py-4 px-6 uppercase tracking-widest transition-all md:skew-x-[-10deg] group rounded-lg md:rounded-none shadow-lg shadow-red-900/20"
                                     >
-                                        <span className="md:skew-x-[10deg] flex items-center gap-2 text-sm md:text-base">
-                                            Voir le projet <ExternalLink size={16} />
+                                        <span className="md:skew-x-[10deg] flex items-center gap-2 text-sm md:text-base uppercase">
+                                            {t("portfolio.view_project", "Voir le projet")} <ExternalLink size={16} />
                                         </span>
                                     </a>
                                 )}

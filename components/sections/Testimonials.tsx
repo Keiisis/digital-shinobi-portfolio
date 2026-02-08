@@ -5,6 +5,7 @@ import { motion } from "framer-motion"
 import { Star, MessageSquarePlus } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { TestimonialModal } from "@/components/ui/TestimonialModal"
+import { useLanguage } from "@/app/context/LanguageContext"
 
 interface Testimonial {
     id: string
@@ -19,6 +20,7 @@ interface Testimonial {
 export function Testimonials() {
     const [alliances, setAlliances] = useState<Testimonial[]>([])
     const [isModalOpen, setIsModalOpen] = useState(false)
+    const { t } = useLanguage()
 
     useEffect(() => {
         const fetchTestimonials = async () => {
@@ -46,9 +48,9 @@ export function Testimonials() {
                     className="text-center mb-24"
                 >
                     <h2 className="font-heading text-2xl md:text-3xl font-bold text-white tracking-[0.2em] mb-2 uppercase drop-shadow-[0_0_10px_rgba(255,255,255,0.2)]">
-                        ÉCHOS DU TERRAIN
+                        {t("testimonials.title")}
                     </h2>
-                    <p className="text-neutral-500 text-[10px] tracking-[0.5em] uppercase">RETOURS DE MISSION & TÉMOIGNAGES</p>
+                    <p className="text-neutral-500 text-[10px] tracking-[0.5em] uppercase">{t("testimonials.subtitle")}</p>
                 </motion.div>
 
                 {alliances.length > 0 ? (
@@ -118,7 +120,7 @@ export function Testimonials() {
                     </div>
                 ) : (
                     <div className="text-center text-neutral-500 mb-16 py-12 border border-dashed border-white/10 rounded">
-                        Aucun témoignage visible pour le moment.
+                        {t("testimonials.empty")}
                     </div>
                 )}
 
@@ -128,7 +130,7 @@ export function Testimonials() {
                         className="group relative px-8 py-3 bg-transparent border border-white/20 hover:border-red-500 text-neutral-400 hover:text-white transition-all uppercase text-xs tracking-[0.2em] overflow-hidden"
                     >
                         <span className="relative z-10 flex items-center gap-2">
-                            <MessageSquarePlus size={16} /> Laisser un avis
+                            <MessageSquarePlus size={16} /> {t("testimonials.leave_review")}
                         </span>
                         <div className="absolute inset-0 bg-red-600/10 scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-500" />
                     </button>

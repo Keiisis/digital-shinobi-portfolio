@@ -5,6 +5,7 @@ import { motion } from "framer-motion"
 import { Star, Upload, Send, User, Briefcase, MessageSquare, Loader2, CheckCircle } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { cn } from "@/lib/utils"
+import { useLanguage } from "@/app/context/LanguageContext"
 
 export function TestimonialSubmission() {
     const [form, setForm] = useState({
@@ -19,6 +20,7 @@ export function TestimonialSubmission() {
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle')
     const fileInputRef = useRef<HTMLInputElement>(null)
+    const { t } = useLanguage()
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -84,10 +86,10 @@ export function TestimonialSubmission() {
                 >
                     <div className="text-center mb-12">
                         <h2 className="font-heading text-3xl font-bold text-white tracking-[0.2em] mb-4 uppercase">
-                            Votre Alliance Compte
+                            {t("testimonials.form.title")}
                         </h2>
                         <p className="text-neutral-400 font-mono text-sm max-w-xl mx-auto">
-                            Rejoignez le clan des partenaires satisfaits. Votre témoignage sera affiché après validation par le Kage.
+                            {t("testimonials.form.subtitle")}
                         </p>
                     </div>
 
@@ -98,13 +100,13 @@ export function TestimonialSubmission() {
                             className="bg-green-900/20 border border-green-500/30 p-8 rounded-lg text-center"
                         >
                             <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-                            <h3 className="text-2xl font-orbitron text-white mb-2">Transmission Reçue</h3>
-                            <p className="text-green-300 font-mono">Merci pour votre alliance. Votre témoignage est en cours de décryptage (validation).</p>
+                            <h3 className="text-2xl font-orbitron text-white mb-2">{t("testimonials.form.success.title")}</h3>
+                            <p className="text-green-300 font-mono">{t("testimonials.form.success.message")}</p>
                             <button
                                 onClick={() => setStatus('idle')}
                                 className="mt-6 text-sm text-green-400 hover:text-white underline underline-offset-4"
                             >
-                                Envoyer une autre transmission
+                                {t("testimonials.form.success.button")}
                             </button>
                         </motion.div>
                     ) : (
@@ -112,7 +114,7 @@ export function TestimonialSubmission() {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
                                     <label className="block text-[10px] font-orbitron tracking-widest text-neutral-500 mb-2 uppercase flex items-center gap-2">
-                                        <User className="w-3 h-3" /> Identité (Nom Complet)
+                                        <User className="w-3 h-3" /> {t("testimonials.form.name")}
                                     </label>
                                     <input
                                         type="text"
@@ -125,7 +127,7 @@ export function TestimonialSubmission() {
                                 </div>
                                 <div>
                                     <label className="block text-[10px] font-orbitron tracking-widest text-neutral-500 mb-2 uppercase flex items-center gap-2">
-                                        <Briefcase className="w-3 h-3" /> Projet Réalisé
+                                        <Briefcase className="w-3 h-3" /> {t("testimonials.form.project")}
                                     </label>
                                     <input
                                         type="text"
@@ -140,7 +142,7 @@ export function TestimonialSubmission() {
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
-                                    <label className="block text-[10px] font-orbitron tracking-widest text-neutral-500 mb-2 uppercase">Role (Optionnel)</label>
+                                    <label className="block text-[10px] font-orbitron tracking-widest text-neutral-500 mb-2 uppercase">{t("testimonials.form.role")}</label>
                                     <input
                                         type="text"
                                         value={form.role}
@@ -150,7 +152,7 @@ export function TestimonialSubmission() {
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-[10px] font-orbitron tracking-widest text-neutral-500 mb-2 uppercase">Entreprise (Optionnel)</label>
+                                    <label className="block text-[10px] font-orbitron tracking-widest text-neutral-500 mb-2 uppercase">{t("testimonials.form.company")}</label>
                                     <input
                                         type="text"
                                         value={form.company}
@@ -163,7 +165,7 @@ export function TestimonialSubmission() {
 
                             <div>
                                 <label className="block text-[10px] font-orbitron tracking-widest text-neutral-500 mb-2 uppercase flex items-center gap-2">
-                                    <MessageSquare className="w-3 h-3" /> Votre Témoignage
+                                    <MessageSquare className="w-3 h-3" /> {t("testimonials.form.message")}
                                 </label>
                                 <textarea
                                     required
@@ -178,7 +180,7 @@ export function TestimonialSubmission() {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
                                 <div>
                                     <label className="block text-[10px] font-orbitron tracking-widest text-neutral-500 mb-2 uppercase flex items-center gap-2">
-                                        <Upload className="w-3 h-3" /> Photo (Optionnel)
+                                        <Upload className="w-3 h-3" /> {t("testimonials.form.photo")}
                                     </label>
                                     <input
                                         type="file"
@@ -189,7 +191,7 @@ export function TestimonialSubmission() {
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-[10px] font-orbitron tracking-widest text-neutral-500 mb-2 uppercase">Note</label>
+                                    <label className="block text-[10px] font-orbitron tracking-widest text-neutral-500 mb-2 uppercase">{t("testimonials.form.rating")}</label>
                                     <div className="flex gap-2">
                                         {[1, 2, 3, 4, 5].map((star) => (
                                             <button
@@ -215,11 +217,11 @@ export function TestimonialSubmission() {
                             >
                                 {isSubmitting ? (
                                     <>
-                                        <Loader2 className="w-5 h-5 animate-spin" /> ENVOI...
+                                        <Loader2 className="w-5 h-5 animate-spin" /> {t("testimonials.form.submitting")}
                                     </>
                                 ) : (
                                     <>
-                                        SOUMETTRE L'ALLIANCE <Send className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                                        {t("testimonials.form.submit")} <Send className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                                     </>
                                 )}
                             </button>

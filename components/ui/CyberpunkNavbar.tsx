@@ -7,27 +7,31 @@ import { Menu, X, Terminal, Cpu, Briefcase, Users, MessageSquare } from "lucide-
 import { cn } from "@/lib/utils"
 import { supabase } from "@/lib/supabase"
 import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher"
-
-const navItems = [
-    { name: "Arsenal", to: "skills", icon: Cpu },
-    { name: "Missions", to: "portfolio", icon: Briefcase },
-    { name: "Alliés", to: "clients", icon: Users },
-    { name: "Témoignages", to: "testimonials", icon: MessageSquare },
-    { name: "Transmission", to: "contact", icon: Terminal },
-]
+import { useLanguage } from "@/app/context/LanguageContext"
 
 export function CyberpunkNavbar() {
     const [scrolled, setScrolled] = useState(false)
     const [isOpen, setIsOpen] = useState(false)
+    const { t } = useLanguage()
 
     // Dynamic State
     const [siteLogo, setSiteLogo] = useState("")
     const [logoText, setLogoText] = useState("DS")
     const [titlePrimary, setTitlePrimary] = useState("DIGITAL")
     const [titleSecondary, setTitleSecondary] = useState("SHINOBI")
-    const [ctaText, setCtaText] = useState("INITIATE")
+    // For CTA text, if user customized it in DB, we use that. Else use translation.
+    const [customCtaText, setCustomCtaText] = useState("")
 
-    const [navigationItems, setNavigationItems] = useState(navItems)
+    // We keep track of custom labels from DB
+    const [customNavLabels, setCustomNavLabels] = useState<{ [key: string]: string }>({})
+
+    const navItems = [
+        { key: "nav.skills", to: "skills", icon: Cpu },
+        { key: "nav.portfolio", to: "portfolio", icon: Briefcase },
+        { key: "nav.clients", to: "clients", icon: Users },
+        { key: "nav.testimonials", to: "testimonials", icon: MessageSquare },
+        { key: "nav.contact", to: "contact", icon: Terminal },
+    ]
 
     useEffect(() => {
         const handleScroll = () => {
@@ -46,13 +50,17 @@ export function CyberpunkNavbar() {
                 if (settings['navbar_logo_short']) setLogoText(settings['navbar_logo_short'])
                 if (settings['navbar_title_primary']) setTitlePrimary(settings['navbar_title_primary'])
                 if (settings['navbar_title_secondary']) setTitleSecondary(settings['navbar_title_secondary'])
-                if (settings['nav_cta_label']) setCtaText(settings['nav_cta_label'])
+                if (settings['nav_cta_label']) setCustomCtaText(settings['nav_cta_label'])
 
-                // Update Nav Links
-                setNavigationItems(prevItems => prevItems.map((item, index) => {
+                // Update Nav Links Custom Labels
+                const newCustomLabels: { [key: string]: string } = {}
+                navItems.forEach((item, index) => {
                     const key = `nav_link_${index + 1}_label`
-                    return settings[key] ? { ...item, name: settings[key] } : item
-                }))
+                    if (settings[key]) {
+                        newCustomLabels[item.key] = settings[key]
+                    }
+                })
+                setCustomNavLabels(newCustomLabels)
             }
         }
         fetchSettings()
@@ -118,14 +126,14 @@ export function CyberpunkNavbar() {
 
                     {/* Desktop Menu */}
                     <div className="hidden md:flex items-center gap-1">
-                        {navigationItems.map((item, index) => (
+                        {navItems.map((item, index) => (
                             <button
-                                key={item.name}
+                                key={item.key}
                                 onClick={() => scrollToSection(item.to)}
                                 className="relative px-6 py-2 group overflow-hidden"
                             >
                                 <span className="relative z-10 font-rajdhani font-bold text-sm tracking-widest text-neutral-400 group-hover:text-white uppercase transition-colors">
-                                    {item.name}
+                                    {customNavLabels[item.key] || t(item.key)}
                                 </span>
                                 {/* Hover Effect - Cyberpunk Underline */}
                                 <span className="absolute bottom-0 left-0 w-full h-[2px] bg-red-600 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-right group-hover:origin-left" />
@@ -138,7 +146,7 @@ export function CyberpunkNavbar() {
                             className="ml-4 px-6 py-2 bg-red-600 hover:bg-red-700 text-white font-orbitron font-bold text-xs tracking-widest skew-x-[-10deg] border border-red-500 shadow-[0_0_15px_rgba(220,38,38,0.3)] hover:shadow-[0_0_25px_rgba(220,38,38,0.6)] transition-all"
                             onClick={() => scrollToSection('contact')}
                         >
-                            <span className="skew-x-[10deg] block">{ctaText}</span>
+                            <span className="skew-x-[10deg] block">{customCtaText || t("nav.cta")}</span>
                         </button>
 
                         {/* Language Switcher */}
@@ -174,9 +182,9 @@ export function CyberpunkNavbar() {
                         </div>
 
                         <div className="flex flex-col gap-8 w-full px-12">
-                            {navigationItems.map((item, index) => (
+                            {navItems.map((item, index) => (
                                 <motion.button
-                                    key={item.name}
+                                    key={item.key}
                                     initial={{ opacity: 0, x: 20 }}
                                     animate={{ opacity: 1, x: 0 }}
                                     transition={{ delay: index * 0.1 }}
@@ -188,7 +196,7 @@ export function CyberpunkNavbar() {
                                     </div>
                                     <div className="flex flex-col">
                                         <span className="font-orbitron font-bold text-2xl text-white tracking-wider group-hover:text-red-500 transition-colors">
-                                            {item.name}
+                                            {customNavLabels[item.key] || t(item.key)}
                                         </span>
                                         <span className="text-[10px] font-mono text-neutral-600 group-hover:text-neutral-400">
                                             // 0{index + 1} LINK

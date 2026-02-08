@@ -5,7 +5,7 @@ const GROQ_API_KEY = process.env.GROQ_API_KEY || ''
 
 export async function POST(request: NextRequest) {
     try {
-        const { messages, visitorId, type = 'chat' } = await request.json()
+        const { messages, visitorId, type = 'chat', language = 'fr' } = await request.json()
 
         // 1. Fetch Assistant Settings
         const { data: settings } = await supabase
@@ -49,6 +49,9 @@ export async function POST(request: NextRequest) {
             - N'invente pas d'informations sur Kevin qui ne sont pas dans la base de connaissances ou la liste des projets.
             - Rappelle aux visiteurs qu'ils peuvent contacter Kevin via le formulaire s'ils ont des questions spécifiques.
             - Utilise des expressions chaleureuses typiques de l'Afrique de l'Ouest (Bénin) quand c'est approprié.
+            
+            CRITICAL INSTRUCTION:
+            - You MUST respond in the language: '${language}'. If the user writes in another language, adapt, but your primary instruction is to speak '${language}'.
         `
 
         // 3. Call Groq

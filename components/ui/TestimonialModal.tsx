@@ -4,6 +4,7 @@ import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { X, Star, Send, Loader2 } from "lucide-react"
 import { supabase } from "@/lib/supabase"
+import { useLanguage } from "@/app/context/LanguageContext"
 
 interface TestimonialModalProps {
     isOpen: boolean
@@ -21,6 +22,7 @@ export function TestimonialModal({ isOpen, onClose }: TestimonialModalProps) {
         rating: 5,
         project_name: ""
     })
+    const { t } = useLanguage()
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -43,7 +45,7 @@ export function TestimonialModal({ isOpen, onClose }: TestimonialModalProps) {
             }, 3000)
         } catch (error) {
             console.error(error)
-            alert("Une erreur est survenue lors de l'envoi.")
+            alert(t("contact.error"))
         } finally {
             setLoading(false)
         }
@@ -85,29 +87,29 @@ export function TestimonialModal({ isOpen, onClose }: TestimonialModalProps) {
                                 >
                                     <Send className="text-white w-8 h-8" />
                                 </motion.div>
-                                <h3 className="text-2xl font-bold text-white mb-2">Message Reçu !</h3>
-                                <p className="text-neutral-400 text-sm">Votre témoignage a été envoyé pour modération.<br />Merci de votre confiance.</p>
+                                <h3 className="text-2xl font-bold text-white mb-2">{t("testimonials.form.success.title")}</h3>
+                                <p className="text-neutral-400 text-sm">{t("testimonials.form.success.message")}</p>
                             </div>
                         ) : (
                             <>
                                 <h2 className="text-2xl font-heading font-bold text-white mb-6 uppercase tracking-wider text-center">
-                                    Partager l'Expérience
+                                    {t("testimonials.form.title")}
                                 </h2>
 
                                 <form onSubmit={handleSubmit} className="space-y-4">
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
-                                            <label className="text-[10px] uppercase text-neutral-500 tracking-widest mb-1 block">Votre Nom</label>
+                                            <label className="text-[10px] uppercase text-neutral-500 tracking-widest mb-1 block">{t("testimonials.form.name")}</label>
                                             <input
                                                 required
                                                 value={formData.name}
                                                 onChange={e => setFormData({ ...formData, name: e.target.value })}
                                                 className="w-full bg-black border border-white/10 rounded p-3 text-white focus:border-red-500 outline-none transition-colors text-sm"
-                                                placeholder="John Doe"
+                                                placeholder={t("contact.name_placeholder")}
                                             />
                                         </div>
                                         <div>
-                                            <label className="text-[10px] uppercase text-neutral-500 tracking-widest mb-1 block">Entreprise</label>
+                                            <label className="text-[10px] uppercase text-neutral-500 tracking-widest mb-1 block">{t("testimonials.form.company")}</label>
                                             <input
                                                 value={formData.company}
                                                 onChange={e => setFormData({ ...formData, company: e.target.value })}
@@ -117,7 +119,7 @@ export function TestimonialModal({ isOpen, onClose }: TestimonialModalProps) {
                                         </div>
                                     </div>
                                     <div>
-                                        <label className="text-[10px] uppercase text-neutral-500 tracking-widest mb-1 block">Rôle / Poste</label>
+                                        <label className="text-[10px] uppercase text-neutral-500 tracking-widest mb-1 block">{t("testimonials.form.role")}</label>
                                         <input
                                             value={formData.role}
                                             onChange={e => setFormData({ ...formData, role: e.target.value })}
@@ -127,7 +129,7 @@ export function TestimonialModal({ isOpen, onClose }: TestimonialModalProps) {
                                     </div>
 
                                     <div>
-                                        <label className="text-[10px] uppercase text-neutral-500 tracking-widest mb-1 block">Note</label>
+                                        <label className="text-[10px] uppercase text-neutral-500 tracking-widest mb-1 block">{t("testimonials.form.rating")}</label>
                                         <div className="flex gap-2">
                                             {[1, 2, 3, 4, 5].map((star) => (
                                                 <button
@@ -146,13 +148,13 @@ export function TestimonialModal({ isOpen, onClose }: TestimonialModalProps) {
                                     </div>
 
                                     <div>
-                                        <label className="text-[10px] uppercase text-neutral-500 tracking-widest mb-1 block">Votre Message</label>
+                                        <label className="text-[10px] uppercase text-neutral-500 tracking-widest mb-1 block">{t("testimonials.form.message")}</label>
                                         <textarea
                                             required
                                             value={formData.content}
                                             onChange={e => setFormData({ ...formData, content: e.target.value })}
                                             className="w-full h-32 bg-black border border-white/10 rounded p-3 text-white focus:border-red-500 outline-none transition-colors text-sm resize-none"
-                                            placeholder="Comment s'est passée notre collaboration ?"
+                                            placeholder={t("contact.message_placeholder")}
                                         />
                                     </div>
 
@@ -161,7 +163,7 @@ export function TestimonialModal({ isOpen, onClose }: TestimonialModalProps) {
                                         disabled={loading}
                                         className="w-full bg-white text-black hover:bg-red-600 hover:text-white font-bold uppercase tracking-widest py-4 rounded transition-all flex items-center justify-center gap-2 mt-4"
                                     >
-                                        {loading ? <Loader2 className="animate-spin" /> : <>Envoyer <Send size={16} /></>}
+                                        {loading ? <Loader2 className="animate-spin" /> : <>{t("testimonials.form.submit")} <Send size={16} /></>}
                                     </button>
                                 </form>
                             </>
