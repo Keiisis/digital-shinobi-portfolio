@@ -89,7 +89,7 @@ export function ImageUpload({ value, onChange, label, className }: ImageUploadPr
                             {uploading ? <Loader2 className="w-6 h-6 animate-spin" /> : <Upload className="w-6 h-6" />}
                         </div>
                         <p className="text-sm font-orbitron tracking-wide text-neutral-300 group-hover/uploader:text-white transition-colors">
-                            {uploading ? "UPLOAD EN COURS..." : "CLIQUER POUR UPLOADER"}
+                            {uploading ? "UPLOAD EN COURS... !" : "CLIQUER POUR UPLOADER"}
                         </p>
                         <p className="text-[10px] text-neutral-500 mt-1 font-mono uppercase">JPG, PNG, WEBP (MAX 5MB)</p>
                     </div>
