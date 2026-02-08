@@ -1,3 +1,4 @@
+// ProjectModal - Updated for TypeScript strict mode
 "use client"
 
 import { useState, useEffect } from "react"
