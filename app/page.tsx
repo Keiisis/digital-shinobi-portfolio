@@ -1,6 +1,7 @@
 import { HeroSection as Hero } from "@/components/sections/Hero"
 import { Skills } from "@/components/sections/Skills"
 import { Portfolio } from "@/components/sections/Portfolio"
+import { Leaderboard } from "@/components/sections/Leaderboard"
 import { Clients } from "@/components/sections/Clients"
 import { Testimonials } from "@/components/sections/Testimonials"
 import { Contact } from "@/components/sections/Contact"
@@ -27,6 +28,9 @@ export default function Home() {
                 <section id="skills" className="relative">
                     <Skills />
                 </section>
+
+                {/* Leaderboard - Top Projects */}
+                <Leaderboard />
 
                 <section id="portfolio" className="relative">
                     <Portfolio />
