@@ -1,66 +1,85 @@
 "use client"
 
-import { useLanguage } from "@/app/context/LanguageContext"
-import { motion, AnimatePresence } from "framer-motion"
-import { Globe, Check } from "lucide-react"
 import { useState } from "react"
-import { cn } from "@/lib/utils"
-
-const LANGUAGES = [
-    { code: 'fr', label: 'Français', flag: '🇫🇷' },
-    { code: 'en', label: 'English', flag: '🇺🇸' },
-    { code: 'es', label: 'Español', flag: '🇪🇸' },
-    { code: 'de', label: 'Deutsch', flag: '🇩🇪' },
-    { code: 'it', label: 'Italiano', flag: '🇮🇹' },
-]
+import { motion, AnimatePresence } from "framer-motion"
+import { Globe, ChevronDown, Check } from "lucide-react"
+import { useLanguage } from "@/app/context/LanguageContext"
 
 export function LanguageSwitcher() {
-    const { language, setLanguage } = useLanguage()
     const [isOpen, setIsOpen] = useState(false)
+    const { language, setLanguage, languages, isLoading } = useLanguage()
+
+    const currentLanguage = languages.find(l => l.code === language) || languages[0]
+
+    if (isLoading || !currentLanguage) {
+        return (
+            <div className="w-10 h-10 bg-white/5 rounded-full animate-pulse" />
+        )
+    }
 
     return (
-        <div className="relative z-50">
+        <div className="relative">
+            {/* Toggle Button */}
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="flex items-center gap-2 px-3 py-1.5 bg-black/50 border border-white/10 rounded-full hover:bg-white/10 transition-colors backdrop-blur-sm group"
+                className="flex items-center gap-2 px-3 py-2 bg-black/50 backdrop-blur-md border border-white/10 rounded-full hover:border-red-500/50 transition-colors group"
             >
-                <Globe className="w-4 h-4 text-neutral-400 group-hover:text-white transition-colors" />
-                <span className="text-xs font-mono text-neutral-300 uppercase">{language}</span>
+                <span className="text-lg">{currentLanguage.flag}</span>
+                <span className="text-xs font-mono text-neutral-400 hidden md:block uppercase">
+                    {currentLanguage.code}
+                </span>
+                <ChevronDown className={`w-3 h-3 text-neutral-500 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
             </button>
 
+            {/* Dropdown */}
             <AnimatePresence>
                 {isOpen && (
-                    <motion.div
-                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                        className="absolute top-full right-0 mt-2 w-48 bg-black/90 border border-white/10 rounded-xl shadow-2xl backdrop-blur-xl overflow-hidden"
-                    >
-                        <div className="p-1">
-                            <div className="text-[10px] uppercase text-neutral-500 font-bold px-3 py-2 border-b border-white/5 tracking-wider">
-                                Select Frequency
+                    <>
+                        {/* Backdrop */}
+                        <div
+                            className="fixed inset-0 z-40"
+                            onClick={() => setIsOpen(false)}
+                        />
+
+                        {/* Menu */}
+                        <motion.div
+                            initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                            className="absolute top-full right-0 mt-2 w-48 bg-neutral-900 border border-white/10 rounded-xl overflow-hidden shadow-2xl z-50"
+                        >
+                            <div className="p-2">
+                                <div className="text-[10px] text-neutral-500 uppercase tracking-wider px-3 py-2 flex items-center gap-2">
+                                    <Globe className="w-3 h-3" />
+                                    Langue / Language
+                                </div>
+
+                                {languages.map((lang) => (
+                                    <button
+                                        key={lang.code}
+                                        onClick={() => {
+                                            setLanguage(lang.code as any)
+                                            setIsOpen(false)
+                                        }}
+                                        className={`
+                                            w-full flex items-center gap-3 px-3 py-2.5 rounded-lg
+                                            transition-colors text-left
+                                            ${language === lang.code
+                                                ? 'bg-red-600/20 text-white'
+                                                : 'hover:bg-white/5 text-neutral-400 hover:text-white'
+                                            }
+                                        `}
+                                    >
+                                        <span className="text-lg">{lang.flag}</span>
+                                        <span className="flex-1 text-sm">{lang.name}</span>
+                                        {language === lang.code && (
+                                            <Check className="w-4 h-4 text-red-500" />
+                                        )}
+                                    </button>
+                                ))}
                             </div>
-                            {LANGUAGES.map((lang) => (
-                                <button
-                                    key={lang.code}
-                                    onClick={() => {
-                                        setLanguage(lang.code as any)
-                                        setIsOpen(false)
-                                    }}
-                                    className={cn(
-                                        "w-full flex items-center justify-between px-3 py-2 text-sm text-left hover:bg-white/10 rounded-lg transition-colors",
-                                        language === lang.code ? "text-white bg-white/5" : "text-neutral-400"
-                                    )}
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <span className="text-base">{lang.flag}</span>
-                                        <span className="font-rajdhani font-medium">{lang.label}</span>
-                                    </div>
-                                    {language === lang.code && <Check className="w-3 h-3 text-red-500" />}
-                                </button>
-                            ))}
-                        </div>
-                    </motion.div>
+                        </motion.div>
+                    </>
                 )}
             </AnimatePresence>
         </div>

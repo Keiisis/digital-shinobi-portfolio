@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { Plus, Search, Filter, Eye, Edit, Trash2, Globe, Image as ImageIcon, X, Save, Upload } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { motion, AnimatePresence } from "framer-motion"
+import { AIEnhanceButton } from "@/components/admin/AIEnhanceButton"
 
 interface Project {
     id: string
@@ -308,11 +309,17 @@ export default function ProjectsPage() {
                                 </div>
 
                                 <div>
-                                    <label className="text-xs text-neutral-400 uppercase tracking-widest block mb-2">Description</label>
+                                    <div className="flex items-center justify-between mb-2">
+                                        <label className="text-xs text-neutral-400 uppercase tracking-widest">Description</label>
+                                        <AIEnhanceButton
+                                            text={formData.description}
+                                            onEnhanced={(enhanced) => setFormData({ ...formData, description: enhanced })}
+                                        />
+                                    </div>
                                     <textarea
                                         value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                                         className="w-full bg-black border border-white/10 rounded p-3 text-white focus:border-red-500 outline-none transition-colors h-24 resize-none"
-                                        placeholder="Détails de la mission..."
+                                        placeholder="Détails de la mission... L'IA peut améliorer votre texte !"
                                     />
                                 </div>
 
