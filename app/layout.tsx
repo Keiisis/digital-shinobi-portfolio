@@ -31,6 +31,7 @@ const inter = Inter({
 import { LanguageProvider } from '@/app/context/LanguageContext'
 import { CustomCursor } from "@/components/ui/CustomCursor"
 import { PagePreloader } from "@/components/ui/PagePreloader"
+import { KevinAssistant } from "@/components/ui/KevinAssistant"
 
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -75,6 +76,7 @@ export default function RootLayout({
         <LanguageProvider>
           <PagePreloader />
           <CustomCursor />
+          <KevinAssistant />
           {children}
         </LanguageProvider>
       </body>

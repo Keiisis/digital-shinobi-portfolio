@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation"
 import { useEffect, useState, Suspense } from "react"
-import { Save, Loader2, Monitor, Type, Mail, User, Lock, Shield, Globe, Image as ImageIcon, Upload } from "lucide-react"
+import { Save, Loader2, Monitor, Type, Mail, User, Lock, Shield, Globe, Image as ImageIcon, Upload, Bot, Sparkles } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { motion } from "framer-motion"
 import { ImageUpload } from "@/components/ui/ImageUpload"
@@ -10,13 +10,23 @@ import { ImageUpload } from "@/components/ui/ImageUpload"
 function AdminSettingsContent() {
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
-    const [activeTab, setActiveTab] = useState("PROFILE") // PROFILE | GLOBAL
+    const [activeTab, setActiveTab] = useState("PROFILE") // PROFILE | GLOBAL | NAVBAR | ASSISTANT
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
 
     const searchParams = useSearchParams()
 
     // Global Settings State
     const [settings, setSettings] = useState<Record<string, string>>({})
+
+    // Assistant Settings State
+    const [assistant, setAssistant] = useState({
+        name: "Kevin Assistant",
+        personality: "",
+        tone: "",
+        knowledge_base: "",
+        system_prompt: "",
+        is_active: true
+    })
 
     // Profile State
     const [profile, setProfile] = useState({
@@ -30,11 +40,28 @@ function AdminSettingsContent() {
     useEffect(() => {
         const tab = searchParams.get('tab')
         if (tab === 'GLOBAL') setActiveTab('GLOBAL')
+        else if (tab === 'NAVBAR') setActiveTab('NAVBAR')
+        else if (tab === 'ASSISTANT') setActiveTab('ASSISTANT')
         else setActiveTab('PROFILE')
 
         fetchSettings()
         fetchUser()
+        fetchAssistantSettings()
     }, [searchParams])
+
+    const fetchAssistantSettings = async () => {
+        const { data } = await supabase.from('assistant_settings').select('*').single()
+        if (data) {
+            setAssistant({
+                name: data.name || "Kevin Assistant",
+                personality: data.personality || "",
+                tone: data.tone || "",
+                knowledge_base: data.knowledge_base || "",
+                system_prompt: data.system_prompt || "",
+                is_active: data.is_active ?? true
+            })
+        }
+    }
 
     const fetchUser = async () => {
         const { data: { user } } = await supabase.auth.getUser()
@@ -75,6 +102,25 @@ function AdminSettingsContent() {
             window.dispatchEvent(new Event('settingsUpdated'))
         } catch (error) {
             setMessage({ type: 'error', text: "Erreur lors de la sauvegarde." })
+        } finally {
+            setSaving(false)
+        }
+    }
+
+    const handleSaveAssistant = async () => {
+        setSaving(true)
+        setMessage(null)
+        try {
+            const { error } = await supabase
+                .from('assistant_settings')
+                .update(assistant)
+                .eq('id', '00000000-0000-0000-0000-000000000001') // Static ID from migration
+
+            if (error) throw error
+            setMessage({ type: 'success', text: "Paramètres de l'assistant IA mis à jour." })
+        } catch (error) {
+            console.error(error)
+            setMessage({ type: 'error', text: "Erreur lors de la sauvegarde de l'assistant." })
         } finally {
             setSaving(false)
         }
@@ -149,6 +195,13 @@ function AdminSettingsContent() {
                 >
                     <Globe className="w-4 h-4 inline-block mr-2" /> Navbar
                     {activeTab === "NAVBAR" && <motion.div layoutId="tab" className="absolute bottom-0 left-0 w-full h-0.5 bg-red-500 shadow-[0_0_10px_rgba(220,38,38,0.5)]" />}
+                </button>
+                <button
+                    onClick={() => setActiveTab("ASSISTANT")}
+                    className={`px-6 py-3 text-sm font-bold tracking-wider uppercase transition-colors relative whitespace-nowrap ${activeTab === "ASSISTANT" ? "text-red-500" : "text-neutral-500 hover:text-white"}`}
+                >
+                    <Sparkles className="w-4 h-4 inline-block mr-2 text-amber-400" /> Assistant IA
+                    {activeTab === "ASSISTANT" && <motion.div layoutId="tab" className="absolute bottom-0 left-0 w-full h-0.5 bg-red-500 shadow-[0_0_10px_rgba(220,38,38,0.5)]" />}
                 </button>
             </div>
 
@@ -524,6 +577,114 @@ function AdminSettingsContent() {
                             >
                                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                                 Sauvegarder Navbar
+                            </button>
+                        </div>
+                    </div>
+                </motion.div>
+            )}
+
+            {/* TAB CONTENT: ASSISTANT SETTINGS */}
+            {activeTab === "ASSISTANT" && (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
+                    <div className="bg-neutral-900/50 border border-white/5 rounded-xl p-6 md:p-8 space-y-6 backdrop-blur-sm">
+                        <div className="flex items-center gap-4 mb-6 pb-6 border-b border-white/5">
+                            <div className="w-16 h-16 rounded-full bg-amber-900/20 border border-amber-500/30 flex items-center justify-center text-amber-500">
+                                <Bot className="w-8 h-8" />
+                            </div>
+                            <div>
+                                <h3 className="text-xl font-bold text-white uppercase tracking-wide">Kevin Assistant (IA)</h3>
+                                <p className="text-neutral-500 text-xs font-mono">Configurez l'intelligence de votre site.</p>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="col-span-1 md:col-span-2">
+                                <label className="block text-xs uppercase text-neutral-400 mb-2 tracking-widest">Nom de l'Assistant</label>
+                                <input
+                                    type="text"
+                                    value={assistant.name}
+                                    onChange={(e) => setAssistant({ ...assistant, name: e.target.value })}
+                                    className="w-full bg-black border border-white/10 rounded p-3 text-white focus:border-amber-500 outline-none transition-colors"
+                                    placeholder="Ex: Kevin Assistant"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-xs uppercase text-neutral-400 mb-2 tracking-widest">Ton de Voix</label>
+                                <input
+                                    type="text"
+                                    value={assistant.tone}
+                                    onChange={(e) => setAssistant({ ...assistant, tone: e.target.value })}
+                                    className="w-full bg-black border border-white/10 rounded p-3 text-white focus:border-amber-500 outline-none transition-colors"
+                                    placeholder="Ex: Professionnel et Amical"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-xs uppercase text-neutral-400 mb-2 tracking-widest">Type de Personnalité</label>
+                                <input
+                                    type="text"
+                                    value={assistant.personality}
+                                    onChange={(e) => setAssistant({ ...assistant, personality: e.target.value })}
+                                    className="w-full bg-black border border-white/10 rounded p-3 text-white focus:border-amber-500 outline-none transition-colors"
+                                    placeholder="Ex: Un guide chaleureux et respectueux"
+                                />
+                            </div>
+
+                            <div className="col-span-1 md:col-span-2">
+                                <label className="block text-xs uppercase text-neutral-400 mb-2 tracking-widest flex items-center justify-between">
+                                    Base de Connaissances (Ce qu'il sait de vous)
+                                    <span className="text-[10px] text-neutral-600 font-normal italic">Soyez précis pour de meilleures réponses</span>
+                                </label>
+                                <textarea
+                                    value={assistant.knowledge_base}
+                                    onChange={(e) => setAssistant({ ...assistant, knowledge_base: e.target.value })}
+                                    className="w-full bg-black border border-white/10 rounded p-3 text-white focus:border-amber-500 outline-none transition-colors h-40 resize-none font-sans text-sm"
+                                    placeholder="Racontez votre parcours, vos expertises, vos tarifs, vos horaires..."
+                                />
+                            </div>
+
+                            <div className="col-span-1 md:col-span-2">
+                                <label className="block text-xs uppercase text-neutral-400 mb-2 tracking-widest flex items-center justify-between">
+                                    Prompt Système (Instructions Directes)
+                                    <span className="text-[10px] text-red-500/50 font-normal italic font-mono uppercase">Avancé - Ne pas modifier sans savoir</span>
+                                </label>
+                                <textarea
+                                    value={assistant.system_prompt}
+                                    onChange={(e) => setAssistant({ ...assistant, system_prompt: e.target.value })}
+                                    className="w-full bg-black border border-white/10 rounded p-3 text-white focus:border-red-500 outline-none transition-colors h-32 resize-none font-mono text-xs"
+                                    placeholder="Instructions pour l'IA..."
+                                />
+                            </div>
+
+                            <div className="col-span-1 md:col-span-2 flex items-center gap-4 p-4 border border-white/5 bg-black/30 rounded-lg">
+                                <div className={`w-12 h-12 rounded flex items-center justify-center shrink-0 ${assistant.is_active ? 'bg-green-500/20 text-green-500' : 'bg-red-500/20 text-red-500'}`}>
+                                    <span className="text-xl">●</span>
+                                </div>
+                                <div className="flex-1">
+                                    <h4 className="text-sm font-bold text-white uppercase tracking-wider">Statut de l'Assistant</h4>
+                                    <p className="text-xs text-neutral-500">Activez ou désactivez l'assistant sur tout le site.</p>
+                                </div>
+                                <button
+                                    onClick={() => setAssistant({ ...assistant, is_active: !assistant.is_active })}
+                                    className={cn(
+                                        "px-4 py-2 rounded font-bold text-xs uppercase transition-all tracking-widest",
+                                        assistant.is_active ? "bg-green-600 text-white" : "bg-neutral-800 text-neutral-500"
+                                    )}
+                                >
+                                    {assistant.is_active ? 'Activé' : 'Désactivé'}
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="flex justify-end pt-6 border-t border-white/5">
+                            <button
+                                onClick={handleSaveAssistant}
+                                disabled={saving}
+                                className="bg-amber-600 hover:bg-amber-500 text-white px-8 py-3 rounded font-bold uppercase text-sm tracking-widest transition-all flex items-center gap-2 disabled:opacity-50"
+                            >
+                                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                                Initialiser l'Assistant
                             </button>
                         </div>
                     </div>
