@@ -6,6 +6,7 @@ import { Save, Loader2, Monitor, Type, Mail, User, Lock, Shield, Globe, Image as
 import { supabase } from "@/lib/supabase"
 import { motion } from "framer-motion"
 import { ImageUpload } from "@/components/ui/ImageUpload"
+import { cn } from "@/lib/utils"
 
 function AdminSettingsContent() {
     const [loading, setLoading] = useState(true)
