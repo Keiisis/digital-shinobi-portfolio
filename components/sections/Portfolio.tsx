@@ -5,6 +5,7 @@ import { motion } from "framer-motion"
 import Image from "next/image"
 import { supabase } from "@/lib/supabase"
 import { ProjectModal } from "@/components/ui/ProjectModal"
+import { ProjectReactions } from "@/components/ui/ProjectReactions"
 
 interface Project {
     id: string
@@ -163,7 +164,10 @@ export function Portfolio() {
                                     {/* Text Overlay */}
                                     <div className="absolute bottom-4 left-6 z-10 w-[80%]">
                                         <h3 className="text-sm font-heading font-bold text-white mb-1 uppercase tracking-wider truncate">{project.title}</h3>
-                                        <span className="text-[10px] text-red-500 font-mono uppercase tracking-widest">{project.category}</span>
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-[10px] text-red-500 font-mono uppercase tracking-widest">{project.category}</span>
+                                            <ProjectReactions projectId={project.id} compact />
+                                        </div>
                                     </div>
 
                                     {/* Gallery indicator */}

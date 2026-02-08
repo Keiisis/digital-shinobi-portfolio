@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { X, ChevronLeft, ChevronRight, ExternalLink } from "lucide-react"
+import { ProjectReactions } from "@/components/ui/ProjectReactions"
 
 interface ProjectModalProps {
     project: any
@@ -132,6 +133,9 @@ export function ProjectModal({ project, isOpen, onClose }: ProjectModalProps) {
                                 </h2>
                                 <div className="h-1 w-20 bg-gradient-to-r from-red-600 to-transparent mb-6" />
                             </div>
+
+                            {/* Reactions Section */}
+                            {project?.id && <ProjectReactions projectId={project.id} />}
 
                             <div className="prose prose-invert prose-sm text-neutral-400 mb-8 font-sans leading-relaxed text-sm md:text-base">
                                 <p>{project.description || "Aucune description disponible pour ce projet."}</p>
