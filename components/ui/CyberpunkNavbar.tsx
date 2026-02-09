@@ -8,11 +8,13 @@ import { cn } from "@/lib/utils"
 import { supabase } from "@/lib/supabase"
 import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher"
 import { useLanguage } from "@/app/context/LanguageContext"
+import { useModal } from "@/app/context/ModalContext"
 
 export function CyberpunkNavbar() {
     const [scrolled, setScrolled] = useState(false)
     const [isOpen, setIsOpen] = useState(false)
     const { t } = useLanguage()
+    const { isProjectModalOpen } = useModal()
 
     // Dynamic State
     const [siteLogo, setSiteLogo] = useState("")
@@ -81,6 +83,11 @@ export function CyberpunkNavbar() {
             element.scrollIntoView({ behavior: 'smooth' })
             setIsOpen(false)
         }
+    }
+
+    // Hide navbar on mobile when project modal is open
+    if (isProjectModalOpen) {
+        return null
     }
 
     return (

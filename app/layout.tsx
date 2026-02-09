@@ -29,6 +29,7 @@ const inter = Inter({
 })
 
 import { LanguageProvider } from '@/app/context/LanguageContext'
+import { ModalProvider } from '@/app/context/ModalContext'
 import { CustomCursor } from "@/components/ui/CustomCursor"
 import { PagePreloader } from "@/components/ui/PagePreloader"
 import { KevinAssistant } from "@/components/ui/KevinAssistant"
@@ -79,10 +80,12 @@ export default function RootLayout({
         inter.variable
       )}>
         <LanguageProvider>
-          <PagePreloader />
-          <CustomCursor />
-          <KevinAssistant />
-          {children}
+          <ModalProvider>
+            <PagePreloader />
+            <CustomCursor />
+            <KevinAssistant />
+            {children}
+          </ModalProvider>
         </LanguageProvider>
       </body>
     </html>

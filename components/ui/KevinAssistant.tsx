@@ -1,11 +1,10 @@
 "use client"
 
-import { useState, useEffect, useRef, useCallback } from "react"
+import { useState, useEffect, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { MessageSquare, Phone, X, Send, Mic, MicOff, Volume2, VolumeX, Loader2, Bot, Sparkles, PhoneOff } from "lucide-react"
+import { MessageSquare, Phone, X, Send, Mic, MicOff, Volume2, VolumeX, Loader2, Bot, Sparkles, PhoneOff, AlertCircle } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { cn } from "@/lib/utils"
-// Import useLanguage hook
 import { useLanguage } from "@/app/context/LanguageContext"
 
 interface Message {
@@ -13,19 +12,21 @@ interface Message {
     content: string
 }
 
-// Helper to get locale for speech API based on app language
-const getSpeechLocale = (lang: string) => {
-    switch (lang) {
-        case 'en': return 'en-US'
-        case 'es': return 'es-ES'
-        case 'de': return 'de-DE'
-        case 'it': return 'it-IT'
-        case 'pt': return 'pt-BR'
-        default: return 'fr-FR'
+// Helper to get locale for speech API
+const getSpeechLocale = (lang: string): string => {
+    const locales: Record<string, string> = {
+        'en': 'en-US',
+        'es': 'es-ES',
+        'de': 'de-DE',
+        'it': 'it-IT',
+        'pt': 'pt-BR',
+        'fr': 'fr-FR'
     }
+    return locales[lang] || 'fr-FR'
 }
 
 export function KevinAssistant() {
+    // UI State
     const [isOpen, setIsOpen] = useState(false)
     const [mode, setMode] = useState<'chat' | 'voice'>('chat')
     const [messages, setMessages] = useState<Message[]>([])
@@ -37,64 +38,110 @@ export function KevinAssistant() {
     const [isSpeakerOn, setIsSpeakerOn] = useState(true)
     const [visitorId, setVisitorId] = useState("")
     const [settings, setSettings] = useState<any>(null)
-    const [speechSupported, setSpeechSupported] = useState(false)
+    const [error, setError] = useState<string | null>(null)
+    const [voiceSupported, setVoiceSupported] = useState(true)
 
+    // Refs for speech APIs
     const scrollRef = useRef<HTMLDivElement>(null)
     const recognitionRef = useRef<any>(null)
     const synthRef = useRef<SpeechSynthesis | null>(null)
     const isProcessingRef = useRef(false)
+    const modeRef = useRef<'chat' | 'voice'>('chat')
+    const isMutedRef = useRef(false)
 
-    // Get language and translation function
     const { t, language } = useLanguage()
 
-    // Initialize Speech APIs once on mount
+    // Keep refs in sync with state
+    useEffect(() => {
+        modeRef.current = mode
+    }, [mode])
+
+    useEffect(() => {
+        isMutedRef.current = isMuted
+    }, [isMuted])
+
+    // Initialize visitor ID and settings
+    useEffect(() => {
+        const init = async () => {
+            // Get or create visitor ID
+            let vid = localStorage.getItem('shinobi_visitor_id')
+            if (!vid) {
+                vid = 'vis_' + Math.random().toString(36).substring(7)
+                localStorage.setItem('shinobi_visitor_id', vid)
+            }
+            setVisitorId(vid)
+
+            // Load assistant settings
+            const { data } = await supabase.from('assistant_settings').select('*').single()
+            if (data) setSettings(data)
+        }
+        init()
+    }, [])
+
+    // Initialize Speech APIs
     useEffect(() => {
         if (typeof window === 'undefined') return
 
+        // Initialize Speech Synthesis
         synthRef.current = window.speechSynthesis
 
-        // Check for Speech Recognition support
-        const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
-        if (SpeechRecognition) {
-            setSpeechSupported(true)
-            const recognition = new SpeechRecognition()
+        // Initialize Speech Recognition
+        const SpeechRecognitionAPI = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+
+        if (!SpeechRecognitionAPI) {
+            console.warn('[Voice] Speech Recognition not supported')
+            setVoiceSupported(false)
+            return
+        }
+
+        try {
+            const recognition = new SpeechRecognitionAPI()
             recognition.continuous = false
             recognition.interimResults = false
+            recognition.maxAlternatives = 1
             recognition.lang = getSpeechLocale(language)
+
+            recognition.onstart = () => {
+                console.log('[Voice] 🎤 Listening started')
+                setIsListening(true)
+                setError(null)
+            }
+
+            recognition.onend = () => {
+                console.log('[Voice] 🔇 Listening ended')
+                setIsListening(false)
+            }
 
             recognition.onresult = (event: any) => {
                 const transcript = event.results[0][0].transcript
-                console.log('[Voice] Recognized:', transcript)
+                console.log('[Voice] 📝 Heard:', transcript)
                 if (transcript.trim()) {
-                    handleSendMessage(transcript)
+                    processVoiceInput(transcript)
                 }
             }
 
             recognition.onerror = (event: any) => {
-                console.error('[Voice] Recognition error:', event.error)
+                console.error('[Voice] ❌ Error:', event.error)
                 setIsListening(false)
-                // Restart if it was an aborted error and we're still in voice mode
-                if (event.error === 'aborted' || event.error === 'no-speech') {
-                    // Will be restarted by restartListening
+
+                if (event.error === 'not-allowed') {
+                    setError(t("assistant.error.mic_permission"))
+                    setVoiceSupported(false)
+                } else if (event.error === 'no-speech') {
+                    // Restart listening if still in voice mode
+                    restartListening()
+                } else if (event.error !== 'aborted') {
+                    setError(`Erreur: ${event.error}`)
                 }
             }
 
-            recognition.onend = () => {
-                console.log('[Voice] Recognition ended')
-                setIsListening(false)
-            }
-
-            recognition.onstart = () => {
-                console.log('[Voice] Recognition started')
-                setIsListening(true)
-            }
-
             recognitionRef.current = recognition
-        } else {
-            console.warn('[Voice] Speech Recognition not supported in this browser')
+            console.log('[Voice] ✅ Speech Recognition initialized')
+        } catch (e) {
+            console.error('[Voice] Failed to initialize:', e)
+            setVoiceSupported(false)
         }
 
-        // Cleanup
         return () => {
             if (recognitionRef.current) {
                 try { recognitionRef.current.abort() } catch (e) { }
@@ -103,30 +150,7 @@ export function KevinAssistant() {
                 synthRef.current.cancel()
             }
         }
-    }, []) // Empty dependency - only run once
-
-    // Update recognition language when language changes
-    useEffect(() => {
-        if (recognitionRef.current) {
-            recognitionRef.current.lang = getSpeechLocale(language)
-        }
     }, [language])
-
-    // Load settings and visitor ID
-    useEffect(() => {
-        const load = async () => {
-            const { data } = await supabase.from('assistant_settings').select('*').single()
-            setSettings(data)
-
-            let vid = localStorage.getItem('shinobi_visitor_id')
-            if (!vid) {
-                vid = 'vis_' + Math.random().toString(36).substring(7)
-                localStorage.setItem('shinobi_visitor_id', vid)
-            }
-            setVisitorId(vid)
-        }
-        load()
-    }, [])
 
     // Scroll to bottom on new messages
     useEffect(() => {
@@ -135,38 +159,56 @@ export function KevinAssistant() {
         }
     }, [messages, isTyping])
 
-    // Start listening function
-    const startListening = useCallback(() => {
-        if (!recognitionRef.current || isMuted || isProcessingRef.current) return
+    // Restart listening helper
+    const restartListening = () => {
+        if (!recognitionRef.current || isMutedRef.current || isProcessingRef.current) return
+        if (modeRef.current !== 'voice') return
+
+        setTimeout(() => {
+            try {
+                recognitionRef.current?.start()
+            } catch (e) {
+                // Already running
+            }
+        }, 500)
+    }
+
+    // Start listening
+    const startListening = () => {
+        if (!recognitionRef.current) {
+            setError("Reconnaissance vocale non disponible")
+            return
+        }
+        if (isMuted || isProcessingRef.current) return
 
         try {
             recognitionRef.current.lang = getSpeechLocale(language)
             recognitionRef.current.start()
-            console.log('[Voice] Starting to listen...')
+            console.log('[Voice] 🎙️ Starting recognition...')
         } catch (e: any) {
-            // Already started or other error
             if (e.name !== 'InvalidStateError') {
-                console.error('[Voice] Failed to start recognition:', e)
+                console.error('[Voice] Start failed:', e)
             }
         }
-    }, [isMuted, language])
+    }
 
-    // Stop listening function
-    const stopListening = useCallback(() => {
+    // Stop listening
+    const stopListening = () => {
         if (!recognitionRef.current) return
-
         try {
             recognitionRef.current.stop()
-            console.log('[Voice] Stopping listening...')
-        } catch (e) {
-            // Already stopped
-        }
+        } catch (e) { }
         setIsListening(false)
-    }, [])
+    }
 
-    // Speak function with proper restart after speaking
-    const speak = useCallback((text: string, onComplete?: () => void) => {
-        if (!synthRef.current || !isSpeakerOn) {
+    // Speak text with callback
+    const speak = (text: string, onComplete?: () => void) => {
+        if (!synthRef.current) {
+            onComplete?.()
+            return
+        }
+
+        if (!isSpeakerOn) {
             onComplete?.()
             return
         }
@@ -178,36 +220,75 @@ export function KevinAssistant() {
         const locale = getSpeechLocale(language)
         utterance.lang = locale
 
-        // Try to find a suitable voice for the locale
+        // Find the best voice
         const voices = synthRef.current.getVoices()
-        let voice = voices.find(v => v.lang === locale && (v.name.includes('Google') || v.name.includes('Microsoft')))
-        if (!voice) {
-            voice = voices.find(v => v.lang.startsWith(language))
-        }
-        if (voice) utterance.voice = voice
+        const preferredVoice = voices.find(v =>
+            v.lang === locale && (v.name.includes('Google') || v.name.includes('Microsoft'))
+        ) || voices.find(v => v.lang.startsWith(language))
 
-        utterance.pitch = 0.9
+        if (preferredVoice) utterance.voice = preferredVoice
+        utterance.pitch = 0.95
         utterance.rate = 1.0
 
         utterance.onend = () => {
-            console.log('[Voice] Speech ended')
+            console.log('[Voice] 🔊 Speech completed')
             onComplete?.()
         }
 
-        utterance.onerror = (e) => {
-            console.error('[Voice] Speech error:', e)
+        utterance.onerror = () => {
+            console.error('[Voice] Speech error')
             onComplete?.()
         }
 
         synthRef.current.speak(utterance)
-    }, [isSpeakerOn, language])
+    }
 
-    // Handle sending messages
-    const handleSendMessage = useCallback(async (text: string) => {
+    // Process voice input
+    const processVoiceInput = async (text: string) => {
         if (!text.trim() || isProcessingRef.current) return
 
         isProcessingRef.current = true
         stopListening()
+
+        const userMsg: Message = { role: 'user', content: text }
+        setMessages(prev => [...prev, userMsg])
+        setIsTyping(true)
+
+        try {
+            const response = await fetch('/api/assistant/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    messages: [...messages, userMsg],
+                    visitorId,
+                    type: 'voice',
+                    language
+                })
+            })
+
+            const data = await response.json()
+            const assistantMsg: Message = { role: 'assistant', content: data.message }
+            setMessages(prev => [...prev, assistantMsg])
+
+            // Speak response then restart listening
+            speak(data.message, () => {
+                isProcessingRef.current = false
+                if (modeRef.current === 'voice' && !isMutedRef.current) {
+                    restartListening()
+                }
+            })
+        } catch (error) {
+            console.error('[Voice] API error:', error)
+            isProcessingRef.current = false
+            restartListening()
+        } finally {
+            setIsTyping(false)
+        }
+    }
+
+    // Handle chat message submit
+    const handleSendMessage = async (text: string) => {
+        if (!text.trim()) return
 
         const userMsg: Message = { role: 'user', content: text }
         setMessages(prev => [...prev, userMsg])
@@ -221,88 +302,73 @@ export function KevinAssistant() {
                 body: JSON.stringify({
                     messages: [...messages, userMsg],
                     visitorId,
-                    type: mode,
-                    language: language
+                    type: 'chat',
+                    language
                 })
             })
 
             const data = await response.json()
-            const assistantMsg: Message = { role: 'assistant', content: data.message }
-
-            setMessages(prev => [...prev, assistantMsg])
-
-            if (mode === 'voice' && isSpeakerOn) {
-                // Speak the response, then restart listening
-                speak(data.message, () => {
-                    isProcessingRef.current = false
-                    if (mode === 'voice' && !isMuted) {
-                        setTimeout(() => startListening(), 300)
-                    }
-                })
-            } else {
-                isProcessingRef.current = false
-                if (mode === 'voice' && !isMuted) {
-                    setTimeout(() => startListening(), 300)
-                }
-            }
+            setMessages(prev => [...prev, { role: 'assistant', content: data.message }])
         } catch (error) {
             console.error('Chat error:', error)
-            isProcessingRef.current = false
-            if (mode === 'voice' && !isMuted) {
-                setTimeout(() => startListening(), 300)
-            }
+            setMessages(prev => [...prev, { role: 'assistant', content: t("assistant.error.generic") }])
         } finally {
             setIsTyping(false)
         }
-    }, [messages, visitorId, mode, language, isMuted, isSpeakerOn, speak, startListening, stopListening])
+    }
 
-    // Start a voice call
-    const startCall = useCallback(() => {
+    // Start voice call
+    const startCall = () => {
+        if (!voiceSupported) {
+            setError(t("assistant.error.no_voice"))
+            return
+        }
+
         setIsOpen(true)
         setMode('voice')
         setIsCalling(true)
         setIsMuted(false)
+        setError(null)
 
-        // Dynamic welcome message
-        const welcomeTemplate = t("assistant.speech.welcome")
-        const welcome = welcomeTemplate.replace("{name}", settings?.name || 'Kevin Assistant')
+        // Welcome message then start listening
+        const welcome = t("assistant.speech.welcome").replace("{name}", settings?.name || 'Kevin')
 
-        // Speak welcome, then start listening
         speak(welcome, () => {
-            console.log('[Voice] Welcome message finished, starting to listen...')
-            setTimeout(() => startListening(), 500)
+            console.log('[Voice] Welcome done, starting to listen')
+            startListening()
         })
-    }, [settings, t, speak, startListening])
+    }
 
-    // End the call
-    const endCall = useCallback(() => {
+    // End voice call
+    const endCall = () => {
         setIsCalling(false)
         setMode('chat')
         stopListening()
         if (synthRef.current) synthRef.current.cancel()
-    }, [stopListening])
+        isProcessingRef.current = false
+    }
 
     // Toggle mute
-    const toggleMute = useCallback(() => {
+    const toggleMute = () => {
         if (isMuted) {
-            // Unmuting - start listening
             setIsMuted(false)
-            setTimeout(() => startListening(), 200)
+            startListening()
         } else {
-            // Muting - stop listening
             setIsMuted(true)
             stopListening()
         }
-    }, [isMuted, startListening, stopListening])
+    }
 
-    // Send report when closing
+    // Send conversation report
     const sendReport = async () => {
         if (messages.length === 0) return
-        await fetch('/api/assistant/report', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ visitorId, messages, type: isCalling ? 'voice' : 'chat' })
-        })
+        try {
+            await fetch('/api/assistant/report', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ visitorId, messages, type: isCalling ? 'voice' : 'chat' })
+            })
+        } catch (e) { }
     }
 
     useEffect(() => {
@@ -312,81 +378,93 @@ export function KevinAssistant() {
     }, [isOpen])
 
     return (
-        <div className="fixed bottom-6 right-6 z-[999]">
+        <div className="fixed bottom-4 right-4 md:bottom-6 md:right-6 z-[999]">
             <AnimatePresence>
                 {isOpen && (
                     <motion.div
                         initial={{ opacity: 0, scale: 0.8, y: 20 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.8, y: 20 }}
-                        className="absolute bottom-24 right-0 w-[90vw] md:w-[400px] h-[550px] bg-neutral-900 border border-red-500/30 rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.8)] flex flex-col overflow-hidden"
+                        className="absolute bottom-20 md:bottom-24 right-0 w-[92vw] md:w-[400px] h-[70vh] md:h-[550px] max-h-[600px] bg-neutral-900 border border-red-500/30 rounded-2xl md:rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.8)] flex flex-col overflow-hidden"
                     >
                         {/* Header */}
-                        <div className="p-5 bg-gradient-to-r from-[#8B0000] to-[#E60000] flex items-center justify-between shadow-lg">
+                        <div className="p-4 md:p-5 bg-gradient-to-r from-[#8B0000] to-[#E60000] flex items-center justify-between shadow-lg shrink-0">
                             <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 rounded-full bg-black/20 border border-white/20 flex items-center justify-center relative">
-                                    <Bot className="w-7 h-7 text-white" />
-                                    <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-[#8B0000]" />
+                                <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-black/20 border border-white/20 flex items-center justify-center relative">
+                                    <Bot className="w-6 h-6 md:w-7 md:h-7 text-white" />
+                                    <span className="absolute bottom-0 right-0 w-2.5 h-2.5 md:w-3 md:h-3 bg-green-500 rounded-full border-2 border-[#8B0000]" />
                                 </div>
                                 <div className="flex flex-col">
-                                    <span className="font-orbitron font-bold text-white text-sm tracking-widest">{settings?.name || 'Kevin Assistant'}</span>
+                                    <span className="font-orbitron font-bold text-white text-xs md:text-sm tracking-wider md:tracking-widest">
+                                        {settings?.name || 'Kevin Assistant'}
+                                    </span>
                                     <div className="flex items-center gap-1">
                                         <div className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" />
-                                        <span className="text-[10px] text-red-100 uppercase tracking-widest font-bold">
+                                        <span className="text-[9px] md:text-[10px] text-red-100 uppercase tracking-wider md:tracking-widest font-bold">
                                             {mode === 'voice' ? t("assistant.call.active") : t("assistant.chat.active")}
                                         </span>
                                     </div>
                                 </div>
                             </div>
                             <button onClick={() => setIsOpen(false)} className="p-2 hover:bg-black/20 text-white rounded-full transition-colors">
-                                <X className="w-6 h-6" />
+                                <X className="w-5 h-5 md:w-6 md:h-6" />
                             </button>
                         </div>
 
-                        {/* Content Area */}
+                        {/* Error Banner */}
+                        {error && (
+                            <div className="px-4 py-2 bg-red-900/50 border-b border-red-500/30 flex items-center gap-2 text-red-200 text-xs">
+                                <AlertCircle className="w-4 h-4 shrink-0" />
+                                <span>{error}</span>
+                                <button onClick={() => setError(null)} className="ml-auto">
+                                    <X className="w-3 h-3" />
+                                </button>
+                            </div>
+                        )}
+
+                        {/* Content */}
                         <div className="flex-1 overflow-hidden flex flex-col bg-[#080808] relative">
                             {mode === 'chat' ? (
                                 <>
-                                    <div ref={scrollRef} className="flex-1 p-5 overflow-y-auto space-y-5 custom-scrollbar pb-20">
+                                    <div ref={scrollRef} className="flex-1 p-4 md:p-5 overflow-y-auto space-y-4 custom-scrollbar pb-20">
                                         {messages.length === 0 && (
-                                            <div className="flex flex-col items-center justify-center h-full text-center p-8 space-y-6">
-                                                <div className="w-20 h-20 rounded-full bg-red-600/5 flex items-center justify-center border border-red-600/20 shadow-[0_0_30px_rgba(220,38,38,0.1)]">
-                                                    <Sparkles className="w-10 h-10 text-red-600" />
+                                            <div className="flex flex-col items-center justify-center h-full text-center p-6 space-y-5">
+                                                <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-red-600/5 flex items-center justify-center border border-red-600/20 shadow-[0_0_30px_rgba(220,38,38,0.1)]">
+                                                    <Sparkles className="w-8 h-8 md:w-10 md:h-10 text-red-600" />
                                                 </div>
                                                 <div className="space-y-2">
-                                                    <h4 className="font-orbitron text-red-500 font-bold text-lg italic">"{t("assistant.welcome.title")}"</h4>
-                                                    <p className="text-sm text-neutral-400 font-rajdhani leading-relaxed">
+                                                    <h4 className="font-orbitron text-red-500 font-bold text-base md:text-lg italic">"{t("assistant.welcome.title")}"</h4>
+                                                    <p className="text-xs md:text-sm text-neutral-400 font-rajdhani leading-relaxed">
                                                         {t("assistant.welcome.text")}
                                                     </p>
                                                 </div>
-                                                <button
-                                                    onClick={startCall}
-                                                    className="flex items-center gap-2 px-6 py-2.5 bg-red-600/10 border border-red-600/30 rounded-full text-red-500 hover:bg-red-600 hover:text-white transition-all font-bold text-xs uppercase tracking-widest shadow-lg"
-                                                >
-                                                    <Phone className="w-4 h-4" /> {t("assistant.call.start")}
-                                                </button>
+                                                {voiceSupported && (
+                                                    <button
+                                                        onClick={startCall}
+                                                        className="flex items-center gap-2 px-5 py-2.5 bg-red-600/10 border border-red-600/30 rounded-full text-red-500 hover:bg-red-600 hover:text-white transition-all font-bold text-[10px] md:text-xs uppercase tracking-widest shadow-lg"
+                                                    >
+                                                        <Phone className="w-4 h-4" /> {t("assistant.call.start")}
+                                                    </button>
+                                                )}
                                             </div>
                                         )}
                                         {messages.map((m, i) => (
-                                            <div
-                                                key={i}
-                                                className={cn("flex flex-col mb-4", m.role === 'user' ? "items-end" : "items-start")}
-                                            >
+                                            <div key={i} className={cn("flex flex-col mb-3", m.role === 'user' ? "items-end" : "items-start")}>
                                                 <div className={cn(
-                                                    "max-w-[85%] p-4 rounded-3xl text-[13px] leading-relaxed shadow-md",
+                                                    "max-w-[85%] p-3 md:p-4 rounded-2xl md:rounded-3xl text-xs md:text-[13px] leading-relaxed shadow-md",
                                                     m.role === 'user'
                                                         ? "bg-red-600 text-white rounded-tr-none font-medium"
-                                                        : "bg-neutral-800/80 text-neutral-200 rounded-tl-none border border-white/5 backdrop-blur-md"
+                                                        : "bg-neutral-800/80 text-neutral-200 rounded-tl-none border border-white/5"
                                                 )}>
                                                     {m.content}
                                                 </div>
-                                                <span className="text-[9px] text-neutral-600 mt-1 uppercase font-mono">
+                                                <span className="text-[8px] md:text-[9px] text-neutral-600 mt-1 uppercase font-mono">
                                                     {m.role === 'user' ? t("assistant.visitor") : (settings?.name || 'Assistant')}
                                                 </span>
                                             </div>
                                         ))}
                                         {isTyping && (
-                                            <div className="flex items-center gap-3 text-neutral-500 text-xs italic bg-neutral-900/40 p-3 rounded-2xl w-fit border border-white/5">
+                                            <div className="flex items-center gap-2 text-neutral-500 text-xs italic bg-neutral-900/40 p-3 rounded-2xl w-fit border border-white/5">
                                                 <Loader2 className="w-4 h-4 animate-spin text-red-500" />
                                                 {t("assistant.typing")}
                                             </div>
@@ -394,37 +472,41 @@ export function KevinAssistant() {
                                     </div>
                                     <form
                                         onSubmit={(e) => { e.preventDefault(); handleSendMessage(input) }}
-                                        className="p-4 border-t border-white/5 bg-black/80 backdrop-blur-lg flex items-center gap-3 absolute bottom-0 left-0 right-0"
+                                        className="p-3 md:p-4 border-t border-white/5 bg-black/80 backdrop-blur-lg flex items-center gap-2 md:gap-3 absolute bottom-0 left-0 right-0"
                                     >
                                         <input
                                             value={input}
                                             onChange={(e) => setInput(e.target.value)}
                                             placeholder={t("assistant.input.placeholder")}
-                                            className="flex-1 bg-neutral-900/80 border border-white/10 rounded-2xl px-5 py-3 text-sm text-white focus:border-red-600 outline-none transition-all placeholder:text-neutral-600 shadow-inner"
+                                            className="flex-1 bg-neutral-900/80 border border-white/10 rounded-xl md:rounded-2xl px-4 py-2.5 md:py-3 text-sm text-white focus:border-red-600 outline-none transition-all placeholder:text-neutral-600"
                                         />
-                                        <button type="submit" className="w-12 h-12 flex items-center justify-center bg-red-600 text-white rounded-2xl hover:bg-red-700 transition-all shadow-lg hover:shadow-red-600/30 group">
-                                            <Send className="w-5 h-5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                                        <button type="submit" className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center bg-red-600 text-white rounded-xl md:rounded-2xl hover:bg-red-700 transition-all shadow-lg">
+                                            <Send className="w-4 h-4 md:w-5 md:h-5" />
                                         </button>
                                     </form>
                                 </>
                             ) : (
-                                <div className="flex-1 flex flex-col items-center justify-between p-10 bg-gradient-to-b from-black to-[#0a0a0a]">
+                                /* Voice Mode UI */
+                                <div className="flex-1 flex flex-col items-center justify-between p-6 md:p-10 bg-gradient-to-b from-black to-[#0a0a0a]">
                                     <div className="text-center space-y-2">
-                                        <h3 className="text-2xl font-orbitron font-bold text-white tracking-widest italic">{settings?.name || 'Kevin Assistant'}</h3>
-                                        <p className="text-xs text-red-500 font-mono flex items-center justify-center gap-2">
+                                        <h3 className="text-xl md:text-2xl font-orbitron font-bold text-white tracking-wider md:tracking-widest italic">
+                                            {settings?.name || 'Kevin'}
+                                        </h3>
+                                        <p className="text-[10px] md:text-xs text-red-500 font-mono flex items-center justify-center gap-2">
                                             <span className="w-2 h-2 bg-red-600 rounded-full animate-ping" />
                                             {t("assistant.secure")}
                                         </p>
                                     </div>
 
-                                    <div className="relative flex items-center justify-center">
+                                    {/* Voice Visualizer */}
+                                    <div className="relative flex items-center justify-center my-6">
                                         <motion.div
                                             animate={{
                                                 scale: isListening ? [1, 1.15, 1] : 1,
                                                 opacity: isListening ? [0.3, 0.6, 0.3] : 0.2
                                             }}
                                             transition={{ repeat: Infinity, duration: 2 }}
-                                            className="absolute w-44 h-44 rounded-full bg-red-600"
+                                            className="absolute w-36 h-36 md:w-44 md:h-44 rounded-full bg-red-600"
                                         />
                                         <motion.div
                                             animate={{
@@ -432,67 +514,64 @@ export function KevinAssistant() {
                                                 opacity: isListening ? [0.1, 0.3, 0.1] : 0.1
                                             }}
                                             transition={{ repeat: Infinity, duration: 3 }}
-                                            className="absolute w-60 h-60 rounded-full bg-red-600"
+                                            className="absolute w-48 h-48 md:w-60 md:h-60 rounded-full bg-red-600"
                                         />
 
                                         <div className={cn(
-                                            "w-28 h-28 rounded-full bg-neutral-900 border-4 border-red-600 flex items-center justify-center shadow-[0_0_50px_rgba(220,38,38,0.4)] z-10 transition-all duration-500",
-                                            isListening ? "border-white" : ""
+                                            "w-24 h-24 md:w-28 md:h-28 rounded-full bg-neutral-900 border-4 flex items-center justify-center shadow-[0_0_50px_rgba(220,38,38,0.4)] z-10 transition-all duration-500",
+                                            isListening ? "border-green-500" : "border-red-600"
                                         )}>
                                             <div className="flex items-center gap-1 h-8">
                                                 {[...Array(5)].map((_, i) => (
                                                     <motion.div
                                                         key={i}
-                                                        animate={{ height: isListening || isTyping ? [8, 24, 8] : 2 }}
-                                                        transition={{ repeat: Infinity, duration: 0.5, delay: i * 0.1 }}
-                                                        className="w-1 bg-red-600 rounded-full"
+                                                        animate={{ height: isListening || isTyping ? [8, 28, 8] : 3 }}
+                                                        transition={{ repeat: Infinity, duration: 0.4, delay: i * 0.08 }}
+                                                        className={cn("w-1.5 rounded-full", isListening ? "bg-green-500" : "bg-red-600")}
                                                     />
                                                 ))}
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div className="text-center space-y-4">
-                                        <p className="text-sm text-neutral-400 font-rajdhani italic">
-                                            {isTyping ? t("assistant.typing") : isListening ? t("assistant.listening") : t("assistant.mic.hint")}
+                                    <div className="text-center space-y-4 w-full">
+                                        <p className="text-xs md:text-sm text-neutral-400 font-rajdhani italic min-h-[20px]">
+                                            {isTyping ? t("assistant.typing") : isListening ? t("assistant.listening") : (isMuted ? t("assistant.muted") : t("assistant.mic.hint"))}
                                         </p>
 
                                         {/* Call Controls */}
-                                        <div className="flex items-center gap-6 pt-4">
-                                            {/* Mute Button */}
+                                        <div className="flex items-center justify-center gap-4 md:gap-6 pt-2">
                                             <button
                                                 onClick={toggleMute}
                                                 className={cn(
-                                                    "w-14 h-14 rounded-full flex items-center justify-center transition-all bg-neutral-800",
-                                                    isMuted ? "text-red-600 bg-white" : "text-white"
+                                                    "w-12 h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center transition-all",
+                                                    isMuted ? "bg-white text-red-600" : "bg-neutral-800 text-white"
                                                 )}
                                             >
-                                                {isMuted ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
+                                                {isMuted ? <MicOff className="w-5 h-5 md:w-6 md:h-6" /> : <Mic className="w-5 h-5 md:w-6 md:h-6" />}
                                             </button>
 
-                                            {/* Hang Up Button */}
                                             <button
                                                 onClick={endCall}
-                                                className="w-20 h-20 rounded-full bg-[#E60000] text-white flex items-center justify-center hover:bg-red-700 shadow-2xl shadow-red-600/20 active:scale-95 transition-all"
+                                                className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-[#E60000] text-white flex items-center justify-center hover:bg-red-700 shadow-2xl shadow-red-600/30 active:scale-95 transition-all"
                                             >
-                                                <PhoneOff className="w-10 h-10" />
+                                                <PhoneOff className="w-8 h-8 md:w-10 md:h-10" />
                                             </button>
 
-                                            {/* Speaker/Switch to Chat Button */}
                                             <button
                                                 onClick={() => setIsSpeakerOn(!isSpeakerOn)}
                                                 className={cn(
-                                                    "w-14 h-14 rounded-full flex items-center justify-center transition-all bg-neutral-800",
-                                                    !isSpeakerOn ? "text-red-600 bg-white" : "text-white"
+                                                    "w-12 h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center transition-all",
+                                                    !isSpeakerOn ? "bg-white text-red-600" : "bg-neutral-800 text-white"
                                                 )}
                                             >
-                                                {isSpeakerOn ? <Volume2 className="w-6 h-6" /> : <VolumeX className="w-6 h-6" />}
+                                                {isSpeakerOn ? <Volume2 className="w-5 h-5 md:w-6 md:h-6" /> : <VolumeX className="w-5 h-5 md:w-6 md:h-6" />}
                                             </button>
                                         </div>
 
                                         <button
-                                            onClick={() => setMode('chat')}
-                                            className="text-[10px] text-neutral-600 uppercase tracking-widest font-bold hover:text-white transition-colors flex items-center gap-2 mx-auto"
+                                            onClick={() => { endCall(); setMode('chat') }}
+                                            className="text-[9px] md:text-[10px] text-neutral-600 uppercase tracking-widest font-bold hover:text-white transition-colors flex items-center gap-2 mx-auto mt-2"
                                         >
                                             <MessageSquare className="w-3 h-3" /> {t("assistant.chat.back")}
                                         </button>
@@ -504,40 +583,38 @@ export function KevinAssistant() {
                 )}
             </AnimatePresence>
 
-            {/* Main Floating Buttons */}
-            <div className="flex flex-col gap-3">
-                {/* Voice Call Direct Button (Visible when closed) */}
-                {!isOpen && (
+            {/* Floating Buttons */}
+            <div className="flex flex-col gap-2 md:gap-3">
+                {!isOpen && voiceSupported && (
                     <motion.button
                         initial={{ opacity: 0, scale: 0 }}
                         animate={{ opacity: 1, scale: 1 }}
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.9 }}
                         onClick={startCall}
-                        className="w-14 h-14 rounded-full bg-white text-red-600 shadow-2xl flex items-center justify-center border-2 border-red-600"
+                        className="w-12 h-12 md:w-14 md:h-14 rounded-full bg-white text-red-600 shadow-2xl flex items-center justify-center border-2 border-red-600 relative"
                         title={t("assistant.call.tooltip")}
                     >
-                        <Phone className="w-6 h-6" />
+                        <Phone className="w-5 h-5 md:w-6 md:h-6" />
                         <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-600 rounded-full">
                             <span className="absolute inset-0 animate-ping bg-red-600 rounded-full opacity-75" />
                         </span>
                     </motion.button>
                 )}
 
-                {/* Main Tab Button */}
                 <motion.button
                     onClick={() => setIsOpen(!isOpen)}
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.9 }}
                     className={cn(
-                        "w-16 h-16 rounded-full shadow-[0_0_30px_rgba(220,38,38,0.4)] flex items-center justify-center transform transition-all duration-500 border-2 border-white/10",
+                        "w-14 h-14 md:w-16 md:h-16 rounded-full shadow-[0_0_30px_rgba(220,38,38,0.4)] flex items-center justify-center transform transition-all duration-500 border-2 border-white/10",
                         isOpen ? "bg-white text-red-600 rotate-90" : "bg-[#E60000] text-white"
                     )}
                 >
-                    {isOpen ? <X className="w-8 h-8" /> : (
+                    {isOpen ? <X className="w-6 h-6 md:w-8 md:h-8" /> : (
                         <div className="relative">
-                            <Bot className="w-9 h-9" />
-                            <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-white text-red-600 rounded-full flex items-center justify-center border-2 border-[#E60000]">
+                            <Bot className="w-7 h-7 md:w-9 md:h-9" />
+                            <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 md:w-4 md:h-4 bg-white text-red-600 rounded-full flex items-center justify-center border-2 border-[#E60000]">
                                 <MessageSquare className="w-2 h-2" />
                             </div>
                         </div>
