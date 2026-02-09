@@ -107,7 +107,12 @@ export default function ProjectsPage() {
 
             if (isGallery) {
                 // Add to gallery images array
-                setFormData(prev => ({ ...prev, images: [...prev.images, publicUrl] }))
+                setFormData(prev => {
+                    const newImages = [...prev.images, publicUrl]
+                    // If image_url is empty, set this first image as the main image_url too
+                    const image_url = prev.image_url || publicUrl
+                    return { ...prev, images: newImages, image_url }
+                })
             } else {
                 // Single main image
                 setFormData(prev => ({ ...prev, image_url: publicUrl }))
@@ -121,10 +126,23 @@ export default function ProjectsPage() {
     }
 
     const removeGalleryImage = (indexToRemove: number) => {
-        setFormData(prev => ({
-            ...prev,
-            images: prev.images.filter((_, index) => index !== indexToRemove)
-        }))
+        setFormData(prev => {
+            const newImages = prev.images.filter((_, index) => index !== indexToRemove)
+            // If we removed the image which was the image_url, update it too
+            const currentMain = prev.image_url
+            let newMain = currentMain
+
+            // If main image was the one removed or is not in the new list, pick first available
+            if (!newImages.includes(currentMain)) {
+                newMain = newImages.length > 0 ? newImages[0] : ""
+            }
+
+            return {
+                ...prev,
+                images: newImages,
+                image_url: newMain
+            }
+        })
     }
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -243,146 +261,110 @@ export default function ProjectsPage() {
 
                                     {/* Image/Video Upload Area - Smart Adaptation based on Category */}
                                     <div className="space-y-4">
+                                        {/* Images Section - ALWAYS Gallery Mode (all categories support multi-images) */}
+                                        <div>
+                                            <label className="text-xs text-neutral-400 uppercase tracking-widest block mb-2">
+                                                Galerie d'Images
+                                            </label>
+                                            <div className="space-y-2">
+                                                <div className="grid grid-cols-3 gap-2">
+                                                    {/* Gallery images */}
+                                                    {formData.images.map((imgUrl, index) => (
+                                                        <div key={index} className="aspect-square rounded overflow-hidden border border-white/10 relative group">
+                                                            <img src={imgUrl} className="w-full h-full object-cover" alt={`Gallery ${index + 1}`} />
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => removeGalleryImage(index)}
+                                                                className="absolute top-1 right-1 bg-red-600 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                            >
+                                                                <X className="w-3 h-3 text-white" />
+                                                            </button>
+                                                            {index === 0 && (
+                                                                <span className="absolute bottom-1 left-1 bg-red-600 text-white text-[8px] px-1.5 py-0.5 rounded uppercase font-bold">Cover</span>
+                                                            )}
+                                                        </div>
+                                                    ))}
+                                                    {/* Add new image button */}
+                                                    <div className="aspect-square border-2 border-dashed border-white/10 rounded flex flex-col items-center justify-center hover:border-red-500/50 cursor-pointer transition-colors relative">
+                                                        {uploading ? (
+                                                            <div className="w-6 h-6 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
+                                                        ) : (
+                                                            <>
+                                                                <Plus className="w-6 h-6 text-neutral-600" />
+                                                                <span className="text-[8px] text-neutral-500 mt-1">Ajouter</span>
+                                                            </>
+                                                        )}
+                                                        <input
+                                                            type="file"
+                                                            accept="image/*"
+                                                            multiple
+                                                            disabled={uploading}
+                                                            onChange={async (e) => {
+                                                                const files = e.target.files
+                                                                if (files) {
+                                                                    for (let i = 0; i < files.length; i++) {
+                                                                        await handleImageUpload(files[i], true)
+                                                                    }
+                                                                }
+                                                            }}
+                                                            className="absolute inset-0 opacity-0 cursor-pointer disabled:cursor-not-allowed"
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <p className="text-[10px] text-neutral-500">Sélectionnez plusieurs images. La première sera la couverture du carrousel.</p>
+                                            </div>
+                                        </div>
+
+                                        {/* Videos Section - Only for video categories */}
                                         {(() => {
                                             const currentCategory = categories.find(c => c.name === formData.category)
-                                            const supportsMultipleImages = currentCategory?.supports_multiple_images ?? true
                                             const supportsVideos = currentCategory?.supports_videos ?? false
 
+                                            if (!supportsVideos) return null
+
                                             return (
-                                                <>
-                                                    {/* Images Section */}
-                                                    <div>
-                                                        <label className="text-xs text-neutral-400 uppercase tracking-widest block mb-2">
-                                                            {supportsMultipleImages ? "Galerie d'Images" : "Visuel Principal"}
-                                                        </label>
-
-                                                        {supportsMultipleImages ? (
-                                                            <div className="space-y-2">
-                                                                <div className="grid grid-cols-3 gap-2">
-                                                                    {/* Gallery images */}
-                                                                    {formData.images.map((imgUrl, index) => (
-                                                                        <div key={index} className="aspect-square rounded overflow-hidden border border-white/10 relative group">
-                                                                            <img src={imgUrl} className="w-full h-full object-cover" alt={`Gallery ${index + 1}`} />
-                                                                            <button
-                                                                                type="button"
-                                                                                onClick={() => removeGalleryImage(index)}
-                                                                                className="absolute top-1 right-1 bg-red-600 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                                                                            >
-                                                                                <X className="w-3 h-3 text-white" />
-                                                                            </button>
-                                                                            {index === 0 && (
-                                                                                <span className="absolute bottom-1 left-1 bg-red-600 text-white text-[8px] px-1.5 py-0.5 rounded uppercase font-bold">Cover</span>
-                                                                            )}
-                                                                        </div>
-                                                                    ))}
-                                                                    {/* Add new image button */}
-                                                                    <div className="aspect-square border-2 border-dashed border-white/10 rounded flex flex-col items-center justify-center hover:border-red-500/50 cursor-pointer transition-colors relative">
-                                                                        {uploading ? (
-                                                                            <div className="w-6 h-6 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
-                                                                        ) : (
-                                                                            <>
-                                                                                <Plus className="w-6 h-6 text-neutral-600" />
-                                                                                <span className="text-[8px] text-neutral-500 mt-1">Ajouter</span>
-                                                                            </>
-                                                                        )}
-                                                                        <input
-                                                                            type="file"
-                                                                            accept="image/*"
-                                                                            multiple
-                                                                            disabled={uploading}
-                                                                            onChange={async (e) => {
-                                                                                const files = e.target.files
-                                                                                if (files) {
-                                                                                    for (let i = 0; i < files.length; i++) {
-                                                                                        await handleImageUpload(files[i], true)
-                                                                                    }
-                                                                                }
-                                                                            }}
-                                                                            className="absolute inset-0 opacity-0 cursor-pointer disabled:cursor-not-allowed"
-                                                                        />
-                                                                    </div>
-                                                                </div>
-                                                                <p className="text-[10px] text-neutral-500">Sélectionnez plusieurs images. La première sera la couverture du carrousel.</p>
-                                                            </div>
-                                                        ) : (
-                                                            <div className="border-2 border-dashed border-white/10 rounded-lg p-4 text-center hover:border-red-500/50 transition-colors relative group h-[200px] flex flex-col items-center justify-center">
-                                                                {formData.image_url ? (
-                                                                    <>
-                                                                        <img src={formData.image_url} alt="Preview" className="h-full object-contain mb-2" />
-                                                                        <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                                                            <span className="text-white text-xs">Changer l'image</span>
-                                                                        </div>
-                                                                    </>
-                                                                ) : (
-                                                                    <div className="text-neutral-500">
-                                                                        <ImageIcon className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                                                                        <span className="text-xs block">Glisser ou cliquer pour upload</span>
-                                                                    </div>
-                                                                )}
+                                                <div>
+                                                    <label className="text-xs text-neutral-400 uppercase tracking-widest block mb-2">
+                                                        Vidéos (YouTube, Vimeo, etc.)
+                                                    </label>
+                                                    <div className="space-y-2">
+                                                        {formData.videos.map((videoUrl, index) => (
+                                                            <div key={index} className="flex items-center gap-2 p-2 bg-black border border-white/10 rounded">
                                                                 <input
-                                                                    type="file"
-                                                                    accept="image/*"
+                                                                    type="url"
+                                                                    value={videoUrl}
                                                                     onChange={(e) => {
-                                                                        const file = e.target.files?.[0]
-                                                                        if (file) handleImageUpload(file)
+                                                                        const newVideos = [...formData.videos]
+                                                                        newVideos[index] = e.target.value
+                                                                        setFormData({ ...formData, videos: newVideos })
                                                                     }}
-                                                                    className="absolute inset-0 opacity-0 cursor-pointer"
+                                                                    className="flex-1 bg-transparent border-none text-white text-xs outline-none"
+                                                                    placeholder="https://youtube.com/watch?v=..."
                                                                 />
-                                                                {uploading && (
-                                                                    <div className="absolute inset-0 bg-black/80 flex items-center justify-center">
-                                                                        <div className="w-6 h-6 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        )}
-                                                    </div>
-
-                                                    {/* Videos Section - Only if category supports videos */}
-                                                    {supportsVideos && (
-                                                        <div>
-                                                            <label className="text-xs text-neutral-400 uppercase tracking-widest block mb-2">
-                                                                Vidéos (YouTube, Vimeo, etc.)
-                                                            </label>
-                                                            <div className="space-y-2">
-                                                                {formData.videos.map((videoUrl, index) => (
-                                                                    <div key={index} className="flex items-center gap-2 p-2 bg-black border border-white/10 rounded">
-                                                                        <input
-                                                                            type="url"
-                                                                            value={videoUrl}
-                                                                            onChange={(e) => {
-                                                                                const newVideos = [...formData.videos]
-                                                                                newVideos[index] = e.target.value
-                                                                                setFormData({ ...formData, videos: newVideos })
-                                                                            }}
-                                                                            className="flex-1 bg-transparent border-none text-white text-xs outline-none"
-                                                                            placeholder="https://youtube.com/watch?v=..."
-                                                                        />
-                                                                        <button
-                                                                            type="button"
-                                                                            onClick={() => {
-                                                                                setFormData({
-                                                                                    ...formData,
-                                                                                    videos: formData.videos.filter((_, i) => i !== index)
-                                                                                })
-                                                                            }}
-                                                                            className="text-red-500 hover:text-red-400"
-                                                                        >
-                                                                            <X className="w-4 h-4" />
-                                                                        </button>
-                                                                    </div>
-                                                                ))}
                                                                 <button
                                                                     type="button"
-                                                                    onClick={() => setFormData({ ...formData, videos: [...formData.videos, ""] })}
-                                                                    className="w-full py-2 border-2 border-dashed border-white/10 rounded text-neutral-500 hover:border-red-500/50 hover:text-white transition-colors text-xs flex items-center justify-center gap-2"
+                                                                    onClick={() => {
+                                                                        setFormData({
+                                                                            ...formData,
+                                                                            videos: formData.videos.filter((_, i) => i !== index)
+                                                                        })
+                                                                    }}
+                                                                    className="text-red-500 hover:text-red-400"
                                                                 >
-                                                                    <Plus className="w-4 h-4" /> Ajouter une vidéo
+                                                                    <X className="w-4 h-4" />
                                                                 </button>
-                                                                <p className="text-[10px] text-neutral-500">Ajoutez les URLs de vos vidéos (YouTube, Vimeo, etc.)</p>
                                                             </div>
-                                                        </div>
-                                                    )}
-                                                </>
+                                                        ))}
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setFormData({ ...formData, videos: [...formData.videos, ""] })}
+                                                            className="w-full py-2 border-2 border-dashed border-white/10 rounded text-neutral-500 hover:border-red-500/50 hover:text-white transition-colors text-xs flex items-center justify-center gap-2"
+                                                        >
+                                                            <Plus className="w-4 h-4" /> Ajouter une vidéo
+                                                        </button>
+                                                        <p className="text-[10px] text-neutral-500">Ajoutez les URLs de vos vidéos (YouTube, Vimeo, etc.)</p>
+                                                    </div>
+                                                </div>
                                             )
                                         })()}
                                     </div>

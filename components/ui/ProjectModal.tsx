@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { motion, AnimatePresence, useMotionValue, useTransform, PanInfo } from "framer-motion"
-import { X, ChevronLeft, ChevronRight, ExternalLink, Sparkles, Eye, Calendar, Layers } from "lucide-react"
+import { X, ChevronLeft, ChevronRight, ExternalLink, Sparkles, Eye, Calendar, Layers, PlayCircle } from "lucide-react"
 import { ProjectReactions } from "@/components/ui/ProjectReactions"
 import { useLanguage } from "@/app/context/LanguageContext"
 import { useModal } from "@/app/context/ModalContext"
@@ -338,6 +338,53 @@ export function ProjectModal({ project, isOpen, onClose }: ProjectModalProps) {
                                         {project.description || t("portfolio.no_description")}
                                     </p>
                                 </motion.div>
+
+                                {/* Videos Section */}
+                                {project.videos && project.videos.length > 0 && (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ delay: 0.6 }}
+                                        className="mb-8"
+                                    >
+                                        <h4 className="text-white font-orbitron text-sm uppercase tracking-wider mb-4 flex items-center gap-2">
+                                            <PlayCircle size={16} className="text-red-500" />
+                                            {t("portfolio.video_content", "Contenu Vidéo")}
+                                        </h4>
+                                        <div className="space-y-4">
+                                            {project.videos.map((videoUrl: string, idx: number) => {
+                                                if (!videoUrl) return null;
+                                                const isYoutube = videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be');
+                                                const isVimeo = videoUrl.includes('vimeo.com');
+
+                                                let embedUrl = videoUrl;
+                                                if (isYoutube) {
+                                                    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+                                                    const match = videoUrl.match(regExp);
+                                                    if (match && match[2].length === 11) {
+                                                        embedUrl = `https://www.youtube.com/embed/${match[2]}`;
+                                                    }
+                                                } else if (isVimeo) {
+                                                    const match = videoUrl.match(/vimeo.com\/(\d+)/);
+                                                    if (match) {
+                                                        embedUrl = `https://player.vimeo.com/video/${match[1]}`;
+                                                    }
+                                                }
+
+                                                return (
+                                                    <div key={idx} className="aspect-video w-full rounded-xl overflow-hidden border border-white/10 bg-black">
+                                                        <iframe
+                                                            src={embedUrl}
+                                                            className="w-full h-full"
+                                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                                            allowFullScreen
+                                                        ></iframe>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </motion.div>
+                                )}
 
                                 {/* Tech Tags */}
                                 <motion.div
