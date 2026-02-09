@@ -1,36 +1,78 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🥷 Digital Shinobi - Premium AI Portfolio Template
 
-## Getting Started
+**Une forteresse digitale immersive conçue pour les Architectes du Web, Cloud Shinobis et Consultants d'Élite.** 
 
-First, run the development server:
+Ce n'est pas qu'un portfolio. C'est un **système de guerre commerciale automatisé** qui transforme vos visiteurs en clients et vos données en opportunités.
 
+---
+
+## 🔥 Armement Principal (Features)
+
+### 1. 🤖 Station d'Infiltration (AI LinkedIn Scraper)
+*   **Dual-Terminal** : Scrappez des profils réels (CEO, Managers) OU des missions (Job Offers) en temps réel.
+*   **Intelligence Exa.ai** : Recherche neurologique indexée sur LinkedIn pour trouver les meilleures cibles dans 6 régions mondiales.
+*   **Massive Extraction** : Jusqu'à 20 résultats par scan, archivés instantanément dans votre CRM.
+
+### 2. 🧠 Intelligence Artificielle "Kage" (Grok & PNL)
+*   **AI Enhancer** : Transformez vos brouillons de réponses en messages de vente d'élite.
+*   **Vente Tactique** : Utilisation de la PNL (Programmation Neuro-Linguistique) et de l'Hypnose Conversationnelle dans chaque réponse.
+*   **Gestion CRM** : Suivi des lectures, des envois et archivage automatique des transmissions.
+
+### 3. 🛡️ Dashboard Admin Shinobi
+*   **Voix des Clans** : Gérez vos messages entrants avec puissance IA.
+*   **Terminal de Données** : Visualisez vos bases de prospects et d'offres d'emploi.
+*   **Export Elite** : Bouton d'exportation Excel dynamique avec choix de table.
+*   **Gestion des Missions** : Suivi de projets et d'arsenal technique.
+
+### 4. 🎨 Design Immersif (Glassmorphism & Cyber)
+*   Animations Framer Motion ultra-fluides.
+*   Design System basé sur Tailwind CSS v4.
+*   Expérience utilisateur premium "Wow effect" dès la 1ère seconde.
+
+---
+
+## 🛠️ Stack Technologique
+*   **Framework** : Next.js 16 (App Router)
+*   **Base de Données** : Supabase (PostgreSQL)
+*   **Intelligence** : Grok (xAI) & Exa.ai (Search Nerve)
+*   **Mailing** : Nodemailer (Transport SMTP Sécurisé)
+*   **UI/UX** : Tailwind v4, Framer Motion, Lucide Icons
+
+---
+
+## 📦 Installation Rapide (Resale Ready)
+
+### 1. Clonez l'arsenal
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/votre-depot/shinobi-portfolio.git
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Sanctuaire Supabase
+*   Créez un projet Supabase.
+*   Copiez-collez le contenu de `/supabase/setup.sql` dans le **SQL Editor** de Supabase et exécutez.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 3. Configuration des Sceaux (.env.local)
+Créez un fichier `.env.local` avec :
+```env
+NEXT_PUBLIC_SUPABASE_URL=vos_donnees
+NEXT_PUBLIC_SUPABASE_ANON_KEY=vos_donnees
+GROQ_API_KEY=votre_cle_grok
+EXA_API_KEY=votre_cle_exa
+EMAIL_APP_PASSWORD=votre_code_16_caracteres
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 4. Personnalisation Tactique
+Modifiez simplement `config/site.ts` pour changer l'identité, les couleurs et les réseaux sociaux de l'ensemble du site.
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
+## 🚀 Déploiement
+Le projet est optimisé pour **Vercel**. 
+1. Connectez votre dépôt.
+2. Ajoutez les variables d'environnement.
+3. Déployez.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+**Conçu pour le profit. Bâti pour la performance. Maîtrisé par l'IA.** 🥷✨

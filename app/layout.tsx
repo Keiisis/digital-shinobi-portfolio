@@ -35,35 +35,20 @@ import { CustomCursor } from "@/components/ui/CustomCursor"
 import { PagePreloader } from "@/components/ui/PagePreloader"
 import { KevinAssistant } from "@/components/ui/KevinAssistant"
 
+import { siteConfig } from '@/config/site'
+
 export async function generateMetadata(): Promise<Metadata> {
-  let favicon = '/favicon.ico' // Default
-
-  if (supabase) {
-    try {
-      // Fetch site settings for dynamic metadata
-      const { data } = await supabase.from('site_settings').select('*')
-      if (data && data.length > 0) {
-        const settings = data.reduce((acc: any, item: any) => {
-          acc[item.key] = item.value
-          return acc
-        }, {})
-        if (settings.site_favicon) {
-          favicon = settings.site_favicon
-        }
-      }
-    } catch (e) {
-      console.error('Error fetching metadata settings:', e)
-    }
-  }
-
   return {
-    title: 'Digital Shinobi | Kevin Chacha',
-    description: 'Digital Shinobi Portfolio - Architecte du Digital',
+    title: {
+      default: `${siteConfig.name} | ${siteConfig.owner}`,
+      template: `%s | ${siteConfig.name}`,
+    },
+    description: siteConfig.description,
     icons: {
-      icon: favicon,
-      shortcut: favicon,
-      apple: favicon,
-    }
+      icon: '/favicon.ico',
+    },
+    authors: [{ name: siteConfig.owner }],
+    creator: siteConfig.owner,
   }
 }
 
