@@ -92,9 +92,10 @@ export function ExperienceProvider({ children }: { children: React.ReactNode }) 
     // Manage BG Music Source
     useEffect(() => {
         const audioUrl = settings['xp_audio_url'] || '/audio/background.mp3'
-        const initialVolume = parseFloat(settings['xp_audio_volume'] || '0.1')
+        const initialVolume = parseFloat(settings['xp_audio_volume'] || '0.05')
+        const audioEnabled = settings['xp_audio_enabled'] !== 'false'
 
-        if (audioUrl) {
+        if (audioUrl && typeof window !== 'undefined') {
             if (!bgMusicRef.current) {
                 bgMusicRef.current = new Audio(audioUrl)
                 bgMusicRef.current.loop = true
@@ -107,16 +108,43 @@ export function ExperienceProvider({ children }: { children: React.ReactNode }) 
                 const targetUrl = audioUrl.startsWith('http') ? audioUrl : window.location.origin + audioUrl
 
                 if (currentSrc !== targetUrl) {
-                    const wasPlaying = !bgMusicRef.current.paused
                     bgMusicRef.current.src = audioUrl
-                    if (wasPlaying) bgMusicRef.current.play().catch(e => console.log("Autoplay blocked"))
                 }
             }
 
             bgMusicRef.current.volume = audioVolume
             setAudioVolume(initialVolume)
+
+            // Attempt Autoplay / Handle First Interaction
+            const startAudio = () => {
+                if (audioEnabled && bgMusicRef.current && bgMusicRef.current.paused) {
+                    bgMusicRef.current.play()
+                        .then(() => {
+                            // Cleanup listeners once playing starts
+                            window.removeEventListener('click', startAudio)
+                            window.removeEventListener('touchstart', startAudio)
+                            window.removeEventListener('keydown', startAudio)
+                        })
+                        .catch(e => console.log("Autoplay still blocked", e))
+                }
+            }
+
+            if (audioEnabled) {
+                window.addEventListener('click', startAudio)
+                window.addEventListener('touchstart', startAudio)
+                window.addEventListener('keydown', startAudio)
+
+                // Try playing immediately (might work if interaction already happened)
+                startAudio()
+            }
+
+            return () => {
+                window.removeEventListener('click', startAudio)
+                window.removeEventListener('touchstart', startAudio)
+                window.removeEventListener('keydown', startAudio)
+            }
         }
-    }, [settings['xp_audio_url'], audioVolume])
+    }, [settings['xp_audio_url'], settings['xp_audio_enabled']])
 
     const fetchSettings = async () => {
         const { data } = await supabase.from('site_settings').select('*')
