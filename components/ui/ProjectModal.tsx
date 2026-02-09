@@ -7,6 +7,7 @@ import { X, ChevronLeft, ChevronRight, ExternalLink, Sparkles, Eye, Calendar, La
 import { ProjectReactions } from "@/components/ui/ProjectReactions"
 import { useLanguage } from "@/app/context/LanguageContext"
 import { useModal } from "@/app/context/ModalContext"
+import { useExperience } from "@/app/context/ExperienceContext"
 import { cn } from "@/lib/utils"
 
 interface ProjectModalProps {
@@ -21,6 +22,7 @@ export function ProjectModal({ project, isOpen, onClose }: ProjectModalProps) {
     const [imageLoaded, setImageLoaded] = useState(false)
     const { t } = useLanguage()
     const { setProjectModalOpen } = useModal()
+    const { playSwoosh, settings } = useExperience()
 
     // Swipe gesture for mobile
     const x = useMotionValue(0)
@@ -33,11 +35,16 @@ export function ProjectModal({ project, isOpen, onClose }: ProjectModalProps) {
 
     const images = rawImages.filter((img: string) => img && typeof img === 'string' && img.length > 0)
 
-    // Notify context when modal opens/closes
+    // Notify context when modal opens/closes & Handle SFX
     useEffect(() => {
         setProjectModalOpen(isOpen)
+        if (isOpen) {
+            // Play Swoosh SFX if enabled
+            // The playSwoosh function inside context internally checks settings['xp_sfx_enabled']
+            playSwoosh()
+        }
         return () => setProjectModalOpen(false)
-    }, [isOpen, setProjectModalOpen])
+    }, [isOpen, setProjectModalOpen, playSwoosh])
 
     // Lock body scroll when modal is open
     useEffect(() => {
@@ -102,6 +109,27 @@ export function ProjectModal({ project, isOpen, onClose }: ProjectModalProps) {
         }
     }
 
+    // Determine Animation Variant (Katana vs Default)
+    const isKatanaParams = settings?.xp_visual_katana === 'true'
+
+    const modalVariants = {
+        default: {
+            initial: { opacity: 0, y: 50, scale: 0.95 },
+            animate: { opacity: 1, y: 0, scale: 1 },
+            exit: { opacity: 0, y: 30, scale: 0.98 },
+            transition: { type: "spring", damping: 25, stiffness: 300 }
+        },
+        katana: {
+            // Aggressive diagonal slice reveal
+            initial: { opacity: 0, clipPath: "polygon(0 0, 0 0, 0 100%, 0% 100%)", x: -50 },
+            animate: { opacity: 1, clipPath: "polygon(0 0, 100% 0, 100% 100%, 0% 100%)", x: 0 },
+            exit: { opacity: 0, clipPath: "polygon(100% 0, 100% 0, 100% 100%, 100% 100%)" },
+            transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] } // Custom cubic-bezier for "sharp" feel
+        }
+    }
+
+    const currentVariant = isKatanaParams ? modalVariants.katana : modalVariants.default
+
     if (!isOpen || !project) return null
 
     return (
@@ -158,10 +186,10 @@ export function ProjectModal({ project, isOpen, onClose }: ProjectModalProps) {
 
                     {/* Modal Content */}
                     <motion.div
-                        initial={{ opacity: 0, y: 50, scale: 0.95 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 30, scale: 0.98 }}
-                        transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                        initial={currentVariant.initial}
+                        animate={currentVariant.animate}
+                        exit={currentVariant.exit}
+                        transition={currentVariant.transition as any}
                         className="relative w-full h-full md:w-[95vw] md:max-w-7xl md:h-[90vh] bg-neutral-950 md:border md:border-white/10 md:rounded-2xl overflow-hidden shadow-[0_0_100px_rgba(0,0,0,0.8)] flex flex-col md:flex-row"
                     >
                         {/* Left: Image Gallery Section */}

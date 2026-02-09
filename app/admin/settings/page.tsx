@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation"
 import { useEffect, useState, Suspense } from "react"
-import { Save, Loader2, Monitor, Type, Mail, User, Lock, Shield, Globe, Image as ImageIcon, Upload, Bot, Sparkles, Share2, Github, Linkedin, Twitter, Instagram, Zap, BarChart3, Terminal } from "lucide-react"
+import { Save, Loader2, Monitor, Type, Mail, User, Lock, Shield, Globe, Image as ImageIcon, Upload, Bot, Sparkles, Share2, Github, Linkedin, Twitter, Instagram, Zap, BarChart3, Terminal, Speaker, Music, Move3d } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { motion } from "framer-motion"
 import { ImageUpload } from "@/components/ui/ImageUpload"
@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils"
 function AdminSettingsContent() {
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
-    const [activeTab, setActiveTab] = useState("PROFILE") // PROFILE | GLOBAL | NAVBAR | ASSISTANT
+    const [activeTab, setActiveTab] = useState("PROFILE") // PROFILE | GLOBAL | NAVBAR | ASSISTANT | SOCIALS | EXPERIENCE
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
     const [reportOutput, setReportOutput] = useState<string | null>(null)
     const [isGeneratingReport, setIsGeneratingReport] = useState(false)
@@ -48,6 +48,8 @@ function AdminSettingsContent() {
         else if (tab === 'NAVBAR') setActiveTab('NAVBAR')
         else if (tab === 'ASSISTANT') setActiveTab('ASSISTANT')
         else if (tab === 'SOCIALS') setActiveTab('SOCIALS')
+        else if (tab === 'EXPERIENCE') setActiveTab('EXPERIENCE')
+
         else setActiveTab('PROFILE')
 
         fetchSettings()
@@ -219,7 +221,7 @@ function AdminSettingsContent() {
             </div>
 
             {/* Tabs */}
-            <div className="flex border-b border-white/10 overflow-x-auto">
+            <div className="flex border-b border-white/10 overflow-x-auto pb-1">
                 <button
                     onClick={() => setActiveTab("PROFILE")}
                     className={`px-6 py-3 text-sm font-bold tracking-wider uppercase transition-colors relative whitespace-nowrap ${activeTab === "PROFILE" ? "text-red-500" : "text-neutral-500 hover:text-white"}`}
@@ -238,8 +240,15 @@ function AdminSettingsContent() {
                     onClick={() => setActiveTab("NAVBAR")}
                     className={`px-6 py-3 text-sm font-bold tracking-wider uppercase transition-colors relative whitespace-nowrap ${activeTab === "NAVBAR" ? "text-red-500" : "text-neutral-500 hover:text-white"}`}
                 >
-                    <Globe className="w-4 h-4 inline-block mr-2" /> Navbar
+                    <Move3d className="w-4 h-4 inline-block mr-2" /> Navbar
                     {activeTab === "NAVBAR" && <motion.div layoutId="tab" className="absolute bottom-0 left-0 w-full h-0.5 bg-red-500 shadow-[0_0_10px_rgba(220,38,38,0.5)]" />}
+                </button>
+                <button
+                    onClick={() => setActiveTab("EXPERIENCE")}
+                    className={`px-6 py-3 text-sm font-bold tracking-wider uppercase transition-colors relative whitespace-nowrap ${activeTab === "EXPERIENCE" ? "text-red-500" : "text-neutral-500 hover:text-white"}`}
+                >
+                    <Speaker className="w-4 h-4 inline-block mr-2 text-purple-400" /> Expérience
+                    {activeTab === "EXPERIENCE" && <motion.div layoutId="tab" className="absolute bottom-0 left-0 w-full h-0.5 bg-red-500 shadow-[0_0_10px_rgba(220,38,38,0.5)]" />}
                 </button>
                 <button
                     onClick={() => setActiveTab("ASSISTANT")}
@@ -252,7 +261,7 @@ function AdminSettingsContent() {
                     onClick={() => setActiveTab("SOCIALS")}
                     className={`px-6 py-3 text-sm font-bold tracking-wider uppercase transition-colors relative whitespace-nowrap ${activeTab === "SOCIALS" ? "text-red-500" : "text-neutral-500 hover:text-white"}`}
                 >
-                    <Share2 className="w-4 h-4 inline-block mr-2 text-cyan-400" /> Comptes Sociaux
+                    <Share2 className="w-4 h-4 inline-block mr-2 text-cyan-400" /> Sociaux
                     {activeTab === "SOCIALS" && <motion.div layoutId="tab" className="absolute bottom-0 left-0 w-full h-0.5 bg-red-500 shadow-[0_0_10px_rgba(220,38,38,0.5)]" />}
                 </button>
             </div>
@@ -265,7 +274,7 @@ function AdminSettingsContent() {
                     className={`p-4 rounded border flex items-center gap-3 ${message.type === 'error' ? 'bg-red-900/20 border-red-500/50 text-red-200' : 'bg-green-900/20 border-green-500/50 text-green-200'
                         }`}
                 >
-                    {message.type === 'error' ? <Shield className="w-5 h-5" /> : <CheckCircle className="w-5 h-5" />}
+                    {message.type === 'error' ? <Shield className="w-5 h-5" /> : <div className="w-5 h-5 rounded-full bg-green-500/20 flex items-center justify-center text-green-500">✓</div>}
                     {message.text}
                 </motion.div>
             )}
@@ -373,6 +382,165 @@ function AdminSettingsContent() {
                     </form>
                 </motion.div>
             )}
+
+            {/* TAB CONTENT: EXPERIENCE */}
+            {activeTab === "EXPERIENCE" && (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
+                    <div className="bg-neutral-900/50 border border-white/5 rounded-xl p-6 md:p-8 space-y-6 backdrop-blur-sm">
+                        <div className="flex items-center gap-4 mb-6 pb-6 border-b border-white/5">
+                            <div className="w-16 h-16 rounded-full bg-purple-900/20 border border-purple-500/30 flex items-center justify-center text-purple-500">
+                                <Music className="w-8 h-8" />
+                            </div>
+                            <div>
+                                <h3 className="text-xl font-bold text-white uppercase tracking-wide">Audio & Visuels</h3>
+                                <p className="text-neutral-500 text-xs font-mono">Gérez l'ambiance immersive (Son, FX, Glitchs).</p>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            {/* AUDIO SECTION */}
+                            <div className="col-span-1 md:col-span-2 space-y-4">
+                                <div className="flex items-center justify-between pb-2 border-b border-white/5">
+                                    <h4 className="text-purple-400 font-bold uppercase text-xs tracking-widest">Atmosphère Sonore</h4>
+
+                                    {/* Toggle Main Switch */}
+                                    <div
+                                        className={`flex items-center gap-2 px-3 py-1 rounded cursor-pointer border transition-all ${settings['xp_audio_enabled'] === 'true' ? 'bg-purple-900/20 border-purple-500 text-purple-200' : 'bg-black border-white/10 text-neutral-500'}`}
+                                        onClick={() => setSettings({ ...settings, xp_audio_enabled: settings['xp_audio_enabled'] === 'true' ? 'false' : 'true' })}
+                                    >
+                                        <span className="text-[10px] uppercase font-bold">{settings['xp_audio_enabled'] === 'true' ? 'ON' : 'OFF'}</span>
+                                        <div className={`w-3 h-3 rounded-full ${settings['xp_audio_enabled'] === 'true' ? 'bg-purple-500 shadow-[0_0_10px_#a855f7]' : 'bg-neutral-700'}`} />
+                                    </div>
+                                </div>
+
+                                <div className={`grid grid-cols-1 md:grid-cols-2 gap-6 transition-opacity ${settings['xp_audio_enabled'] === 'true' ? 'opacity-100' : 'opacity-50 pointer-events-none'}`}>
+                                    <div className="col-span-1 md:col-span-2">
+                                        <ImageUpload
+                                            value={settings['xp_audio_url'] || ''}
+                                            onChange={(url) => setSettings({ ...settings, xp_audio_url: url })}
+                                            label="Fichier Audio d'Ambiance (MP3)"
+                                        />
+                                        <p className="mt-2 text-[10px] text-neutral-500 flex items-center gap-2">
+                                            <Terminal className="w-3 h-3" /> Recommandé : Fichier MP3 léger (&lt; 5Mo). Les liens Youtube ne fonctionnent pas en background.
+                                        </p>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-xs uppercase text-neutral-400 mb-2 tracking-widest">Volume (0.0 - 1.0)</label>
+                                        <div className="flex items-center gap-3">
+                                            <input
+                                                type="range"
+                                                min="0"
+                                                max="1"
+                                                step="0.1"
+                                                value={settings['xp_audio_volume'] || '0.2'}
+                                                onChange={(e) => setSettings({ ...settings, xp_audio_volume: e.target.value })}
+                                                className="w-full accent-purple-500 h-1 bg-white/10 rounded-lg appearance-none cursor-pointer"
+                                            />
+                                            <span className="text-xs font-mono w-8 text-right text-purple-400">{settings['xp_audio_volume'] || '0.2'}</span>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-center justify-between bg-black p-3 rounded border border-white/10">
+                                        <div className="flex items-center gap-3">
+                                            <Speaker className="w-4 h-4 text-purple-500" />
+                                            <div>
+                                                <span className="block text-xs font-bold text-white uppercase">Sound FX</span>
+                                                <span className="block text-[10px] text-neutral-500">Bruits d'interface (Hover/Click)</span>
+                                            </div>
+                                        </div>
+                                        <div
+                                            className={`w-8 h-4 rounded-full relative transition-colors cursor-pointer ${settings['xp_sfx_enabled'] !== 'false' ? 'bg-purple-500' : 'bg-neutral-800'}`}
+                                            onClick={() => setSettings({ ...settings, xp_sfx_enabled: settings['xp_sfx_enabled'] === 'false' ? 'true' : 'false' })}
+                                        >
+                                            <div className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-all ${settings['xp_sfx_enabled'] !== 'false' ? 'left-4.5' : 'left-0.5'}`} style={{ left: settings['xp_sfx_enabled'] !== 'false' ? 'calc(100% - 0.125rem - 0.75rem)' : '0.125rem' }} />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* VISUAL & SECRET SECTION */}
+                            <div className="col-span-1 md:col-span-2 space-y-4 pt-4 border-t border-white/5">
+                                <h4 className="text-red-400 font-bold uppercase text-xs tracking-widest pb-2">Effets Visuels & Secrets</h4>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="flex items-center justify-between bg-black p-3 rounded border border-white/10">
+                                        <div className="flex items-center gap-3">
+                                            <Zap className="w-4 h-4 text-red-500" />
+                                            <div>
+                                                <span className="block text-xs font-bold text-white uppercase">Glitch FX</span>
+                                                <span className="block text-[10px] text-neutral-500">Effets de distorsion visuelle</span>
+                                            </div>
+                                        </div>
+                                        <div
+                                            className={`w-8 h-4 rounded-full relative transition-colors cursor-pointer ${settings['xp_visual_glitch'] !== 'false' ? 'bg-red-500' : 'bg-neutral-800'}`}
+                                            onClick={() => setSettings({ ...settings, xp_visual_glitch: settings['xp_visual_glitch'] === 'false' ? 'true' : 'false' })}
+                                        >
+                                            <div className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-all ${settings['xp_visual_glitch'] !== 'false' ? 'left-4.5' : 'left-0.5'}`} style={{ left: settings['xp_visual_glitch'] !== 'false' ? 'calc(100% - 0.125rem - 0.75rem)' : '0.125rem' }} />
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-center justify-between bg-black p-3 rounded border border-white/10">
+                                        <div className="flex items-center gap-3">
+                                            <Move3d className="w-4 h-4 text-cyan-500" />
+                                            <div>
+                                                <span className="block text-xs font-bold text-white uppercase">Katana Transition</span>
+                                                <span className="block text-[10px] text-neutral-500">Ouverture modale "Slice"</span>
+                                            </div>
+                                        </div>
+                                        <div
+                                            className={`w-8 h-4 rounded-full relative transition-colors cursor-pointer ${settings['xp_visual_katana'] !== 'false' ? 'bg-cyan-500' : 'bg-neutral-800'}`}
+                                            onClick={() => setSettings({ ...settings, xp_visual_katana: settings['xp_visual_katana'] === 'false' ? 'true' : 'false' })}
+                                        >
+                                            <div className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-all ${settings['xp_visual_katana'] !== 'false' ? 'left-4.5' : 'left-0.5'}`} style={{ left: settings['xp_visual_katana'] !== 'false' ? 'calc(100% - 0.125rem - 0.75rem)' : '0.125rem' }} />
+                                        </div>
+                                    </div>
+
+                                    <div className="col-span-1 md:col-span-2 p-4 bg-red-900/10 border border-red-900/30 rounded-lg">
+                                        <div className="flex items-center justify-between mb-4">
+                                            <div className="flex items-center gap-2">
+                                                <div className="bg-red-500 w-1.5 h-4 rounded-sm" />
+                                                <span className="text-xs font-bold font-orbitron text-red-500 uppercase tracking-widest">Shadow Protocol (Konami)</span>
+                                            </div>
+                                            <div
+                                                className={`w-8 h-4 rounded-full relative transition-colors cursor-pointer ${settings['xp_konami_code'] !== 'false' ? 'bg-red-600' : 'bg-neutral-800'}`}
+                                                onClick={() => setSettings({ ...settings, xp_konami_code: settings['xp_konami_code'] === 'false' ? 'true' : 'false' })}
+                                            >
+                                                <div className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-all ${settings['xp_konami_code'] !== 'false' ? 'left-4.5' : 'left-0.5'}`} style={{ left: settings['xp_konami_code'] !== 'false' ? 'calc(100% - 0.125rem - 0.75rem)' : '0.125rem' }} />
+                                            </div>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="block text-[10px] uppercase text-neutral-500 mb-1">URL de Redirection (Secret)</label>
+                                            <input
+                                                type="text"
+                                                value={settings['xp_konami_redirect'] || ''}
+                                                onChange={(e) => setSettings({ ...settings, xp_konami_redirect: e.target.value })}
+                                                className="w-full bg-black border border-white/10 rounded p-2 text-red-200 text-xs font-mono focus:border-red-500 outline-none"
+                                                placeholder="https://..."
+                                            />
+                                            <p className="text-[9px] text-neutral-600">
+                                                Code: <span className="font-mono text-red-500">↑ ↑ ↓ ↓ ← → ← → B A</span>. Si activé, redirige ou débloque un mode caché.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex justify-end pt-6 border-t border-white/5">
+                            <button
+                                onClick={handleSaveGlobal}
+                                disabled={saving}
+                                className="bg-purple-600 hover:bg-purple-500 text-white px-8 py-3 rounded font-bold uppercase text-sm tracking-widest transition-all flex items-center gap-2 disabled:opacity-50"
+                            >
+                                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                                Sauvegarder Expérience
+                            </button>
+                        </div>
+                    </div>
+                </motion.div>
+            )}
+
 
             {/* TAB CONTENT: GLOBAL SETTINGS */}
             {activeTab === "GLOBAL" && (

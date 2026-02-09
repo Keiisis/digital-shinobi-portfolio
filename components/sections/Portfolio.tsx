@@ -7,6 +7,7 @@ import { supabase } from "@/lib/supabase"
 import { ProjectModal } from "@/components/ui/ProjectModal"
 import { ProjectReactions } from "@/components/ui/ProjectReactions"
 import { useLanguage } from "@/app/context/LanguageContext"
+import { useExperience } from "@/app/context/ExperienceContext"
 
 interface Project {
     id: string
@@ -47,6 +48,7 @@ export function Portfolio() {
     const [loading, setLoading] = useState(true)
     const [selectedProject, setSelectedProject] = useState<Project | null>(null)
     const { t } = useLanguage()
+    const { playHover, playClick } = useExperience()
 
     useEffect(() => {
         const fetchData = async () => {
@@ -97,7 +99,8 @@ export function Portfolio() {
                         {["TOUT", ...categories].map((filter) => (
                             <button
                                 key={filter}
-                                onClick={() => setActiveTab(filter)}
+                                onClick={() => { playClick(); setActiveTab(filter) }}
+                                onMouseEnter={playHover}
                                 className={`pb-4 px-2 text-[10px] md:text-xs font-heading tracking-widest transition-all relative ${activeTab === filter ? "text-white" : "text-neutral-500 hover:text-white"
                                     }`}
                             >
@@ -135,7 +138,9 @@ export function Portfolio() {
                                     transition={{ delay: index * 0.1 }}
                                     viewport={{ once: true }}
                                     className="group relative aspect-[16/9] cursor-pointer"
+                                    onMouseEnter={playHover}
                                     onClick={() => {
+                                        playClick()
                                         // Intelligent Click Handling Logic with Direct Link Toggle
                                         if (project.direct_link && project.link) {
                                             // 1. Direct Link Mode: Open External URL immediately

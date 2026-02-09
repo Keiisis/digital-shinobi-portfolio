@@ -6,6 +6,7 @@ import { MessageSquare, Phone, X, Send, Mic, MicOff, Volume2, VolumeX, Loader2, 
 import { supabase } from "@/lib/supabase"
 import { cn } from "@/lib/utils"
 import { useLanguage } from "@/app/context/LanguageContext"
+import { useExperience } from "@/app/context/ExperienceContext"
 
 interface Message {
     role: 'user' | 'assistant'
@@ -100,6 +101,7 @@ export function KevinAssistant() {
     const isMutedRef = useRef(false)
 
     const { language } = useLanguage()
+    const { playHover, playClick } = useExperience()
 
     // Helper function with fallback
     const getText = useCallback((key: string): string => {
@@ -347,6 +349,7 @@ export function KevinAssistant() {
 
     // Handle chat message
     const handleSendMessage = async (text: string) => {
+        playClick()
         if (!text.trim()) return
 
         const userMsg: Message = { role: 'user', content: text }
@@ -378,6 +381,7 @@ export function KevinAssistant() {
 
     // Start voice call
     const startCall = async () => {
+        playClick()
         // Handle unsupported browser
         if (micPermission === 'unsupported') {
             setIsOpen(true)
@@ -417,6 +421,7 @@ export function KevinAssistant() {
 
     // End call
     const endCall = () => {
+        playClick()
         setIsCalling(false)
         setMode('chat')
         stopListening()
@@ -426,6 +431,7 @@ export function KevinAssistant() {
 
     // Toggle mute
     const toggleMute = () => {
+        playClick()
         if (isMuted) {
             setIsMuted(false)
             startListening()
@@ -500,8 +506,9 @@ export function KevinAssistant() {
                 <motion.button
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
-                    onClick={requestMicPermission}
+                    onClick={() => { playClick(); requestMicPermission() }}
                     disabled={isRequestingPermission}
+                    onMouseEnter={playHover}
                     className="px-8 py-4 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white font-bold rounded-xl transition-all shadow-lg shadow-red-900/30 disabled:opacity-50 flex items-center gap-3"
                 >
                     {isRequestingPermission ? (
@@ -582,6 +589,7 @@ export function KevinAssistant() {
                 <div className="flex items-center justify-center gap-4 md:gap-6 pt-2">
                     <button
                         onClick={toggleMute}
+                        onMouseEnter={playHover}
                         className={cn(
                             "w-12 h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center transition-all",
                             isMuted ? "bg-white text-red-600" : "bg-neutral-800 text-white hover:bg-neutral-700"
@@ -590,15 +598,18 @@ export function KevinAssistant() {
                         {isMuted ? <MicOff className="w-5 h-5 md:w-6 md:h-6" /> : <Mic className="w-5 h-5 md:w-6 md:h-6" />}
                     </button>
 
+
                     <button
                         onClick={endCall}
+                        onMouseEnter={playHover}
                         className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-[#E60000] text-white flex items-center justify-center hover:bg-red-700 shadow-2xl shadow-red-600/30 active:scale-95 transition-all"
                     >
                         <PhoneOff className="w-8 h-8 md:w-10 md:h-10" />
                     </button>
 
                     <button
-                        onClick={() => setIsSpeakerOn(!isSpeakerOn)}
+                        onClick={() => { playClick(); setIsSpeakerOn(!isSpeakerOn) }}
+                        onMouseEnter={playHover}
                         className={cn(
                             "w-12 h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center transition-all",
                             !isSpeakerOn ? "bg-white text-red-600" : "bg-neutral-800 text-white hover:bg-neutral-700"
@@ -647,7 +658,7 @@ export function KevinAssistant() {
                                     </div>
                                 </div>
                             </div>
-                            <button onClick={() => setIsOpen(false)} className="p-2 hover:bg-black/20 text-white rounded-full transition-colors">
+                            <button onClick={() => { playClick(); setIsOpen(false) }} className="p-2 hover:bg-black/20 text-white rounded-full transition-colors">
                                 <X className="w-5 h-5 md:w-6 md:h-6" />
                             </button>
                         </div>
@@ -673,6 +684,7 @@ export function KevinAssistant() {
                                                 {micPermission !== 'unsupported' && (
                                                     <button
                                                         onClick={startCall}
+                                                        onMouseEnter={playHover}
                                                         className="flex items-center gap-2 px-5 py-2.5 bg-red-600/10 border border-red-600/30 rounded-full text-red-500 hover:bg-red-600 hover:text-white transition-all font-bold text-[10px] md:text-xs uppercase tracking-widest"
                                                     >
                                                         <Phone className="w-4 h-4" /> {getText("assistant.call.start")}
@@ -712,7 +724,7 @@ export function KevinAssistant() {
                                             placeholder={getText("assistant.input.placeholder")}
                                             className="flex-1 bg-neutral-900/80 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:border-red-600 outline-none transition-all placeholder:text-neutral-600"
                                         />
-                                        <button type="submit" className="w-10 h-10 flex items-center justify-center bg-red-600 text-white rounded-xl hover:bg-red-700 transition-all">
+                                        <button type="submit" onMouseEnter={playHover} className="w-10 h-10 flex items-center justify-center bg-red-600 text-white rounded-xl hover:bg-red-700 transition-all">
                                             <Send className="w-4 h-4" />
                                         </button>
                                     </form>
@@ -737,6 +749,7 @@ export function KevinAssistant() {
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.9 }}
                         onClick={startCall}
+                        onMouseEnter={playHover}
                         className="w-12 h-12 md:w-14 md:h-14 rounded-full bg-white text-red-600 shadow-2xl flex items-center justify-center border-2 border-red-600 relative"
                         title={getText("assistant.call.tooltip")}
                     >
@@ -748,7 +761,8 @@ export function KevinAssistant() {
                 )}
 
                 <motion.button
-                    onClick={() => setIsOpen(!isOpen)}
+                    onClick={() => { playClick(); setIsOpen(!isOpen) }}
+                    onMouseEnter={playHover}
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.9 }}
                     className={cn(

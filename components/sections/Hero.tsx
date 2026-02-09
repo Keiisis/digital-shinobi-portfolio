@@ -8,6 +8,7 @@ import { supabase } from "@/lib/supabase"
 import { MousePointer2 } from "lucide-react"
 import { getAnimationSettings, isLowPowerDevice } from "@/lib/performance"
 import { useLanguage } from "@/app/context/LanguageContext"
+import { useExperience } from "@/app/context/ExperienceContext"
 
 const TOTAL_FRAMES = 26
 
@@ -17,6 +18,7 @@ export function HeroSection() {
     const [currentFrame, setCurrentFrame] = useState(1)
     const [isLowPower, setIsLowPower] = useState(false)
     const { t } = useLanguage()
+    const { playHover, playClick } = useExperience()
 
     // Get optimized settings
     const settings = useMemo(() => getAnimationSettings(), [])
@@ -201,14 +203,16 @@ export function HeroSection() {
                     {/* CTA Buttons */}
                     <div className="flex flex-col md:flex-row gap-6 items-center">
                         <Button
-                            onClick={() => document.getElementById('portfolio')?.scrollIntoView({ behavior: 'smooth' })}
+                            onClick={() => { playClick(); document.getElementById('portfolio')?.scrollIntoView({ behavior: 'smooth' }) }}
+                            onMouseEnter={playHover}
                             className="bg-red-600 hover:bg-red-700 text-white font-orbitron font-bold tracking-widest px-8 py-6 rounded-none skew-x-[-10deg] border border-red-500 shadow-[0_0_20px_rgba(220,38,38,0.4)] hover:shadow-[0_0_40px_rgba(220,38,38,0.6)] transition-all"
                         >
                             <span className="skew-x-[10deg]">{t("hero.explore")}</span>
                         </Button>
 
                         <Button
-                            onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
+                            onClick={() => { playClick(); document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' }) }}
+                            onMouseEnter={playHover}
                             variant="outline"
                             className="bg-transparent hover:bg-white/5 text-white border-white/20 font-orbitron font-bold tracking-widest px-8 py-6 rounded-none skew-x-[-10deg] hover:border-red-500/50 hover:text-red-500 transition-all"
                         >

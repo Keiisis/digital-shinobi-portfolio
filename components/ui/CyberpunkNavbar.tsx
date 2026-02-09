@@ -3,18 +3,20 @@
 import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 
-import { Menu, X, Terminal, Cpu, Briefcase, Users, MessageSquare } from "lucide-react"
+import { Menu, X, Terminal, Cpu, Briefcase, Users, MessageSquare, Volume2, VolumeX } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { supabase } from "@/lib/supabase"
 import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher"
 import { useLanguage } from "@/app/context/LanguageContext"
 import { useModal } from "@/app/context/ModalContext"
+import { useExperience } from "@/app/context/ExperienceContext"
 
 export function CyberpunkNavbar() {
     const [scrolled, setScrolled] = useState(false)
     const [isOpen, setIsOpen] = useState(false)
     const { t } = useLanguage()
     const { isProjectModalOpen } = useModal()
+    const { playHover, playClick, toggleAudio, isAudioPlaying } = useExperience()
 
     // Dynamic State
     const [siteLogo, setSiteLogo] = useState("")
@@ -78,6 +80,7 @@ export function CyberpunkNavbar() {
     }, [])
 
     const scrollToSection = (id: string) => {
+        playClick()
         const element = document.getElementById(id)
         if (element) {
             element.scrollIntoView({ behavior: 'smooth' })
@@ -108,7 +111,8 @@ export function CyberpunkNavbar() {
                     {/* Logo Area */}
                     <div
                         className="flex items-center gap-3 cursor-pointer group"
-                        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                        onClick={() => { playClick(); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
+                        onMouseEnter={playHover}
                     >
                         <div className="relative w-10 h-10 overflow-hidden rounded transform group-hover:rotate-12 transition-transform duration-300">
                             {siteLogo ? (
@@ -133,10 +137,28 @@ export function CyberpunkNavbar() {
 
                     {/* Desktop Menu */}
                     <div className="hidden md:flex items-center gap-1">
+                        {/* Audio Toggle */}
+                        <button
+                            onClick={() => { playClick(); toggleAudio(); }}
+                            onMouseEnter={playHover}
+                            className="p-2 text-neutral-400 hover:text-red-500 transition-colors mr-2 relative group"
+                            title={isAudioPlaying ? "Mute Atmosphere" : "Play Atmosphere"}
+                        >
+                            {isAudioPlaying ? (
+                                <div className="relative">
+                                    <Volume2 className="w-5 h-5" />
+                                    <span className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full animate-pulse shadow-[0_0_5px_#22c55e]" />
+                                </div>
+                            ) : (
+                                <VolumeX className="w-5 h-5" />
+                            )}
+                        </button>
+
                         {navItems.map((item, index) => (
                             <button
                                 key={item.key}
                                 onClick={() => scrollToSection(item.to)}
+                                onMouseEnter={playHover}
                                 className="relative px-6 py-2 group overflow-hidden"
                             >
                                 <span className="relative z-10 font-rajdhani font-bold text-sm tracking-widest text-neutral-400 group-hover:text-white uppercase transition-colors">
@@ -152,6 +174,7 @@ export function CyberpunkNavbar() {
                         <button
                             className="ml-4 px-6 py-2 bg-red-600 hover:bg-red-700 text-white font-orbitron font-bold text-xs tracking-widest skew-x-[-10deg] border border-red-500 shadow-[0_0_15px_rgba(220,38,38,0.3)] hover:shadow-[0_0_25px_rgba(220,38,38,0.6)] transition-all"
                             onClick={() => scrollToSection('contact')}
+                            onMouseEnter={playHover}
                         >
                             <span className="skew-x-[10deg] block">{customCtaText || t("nav.cta")}</span>
                         </button>
@@ -163,12 +186,22 @@ export function CyberpunkNavbar() {
                     </div>
 
                     {/* Mobile Toggle */}
-                    <button
-                        className="md:hidden text-white p-2"
-                        onClick={() => setIsOpen(!isOpen)}
-                    >
-                        {isOpen ? <X className="w-8 h-8 text-red-500" /> : <Menu className="w-8 h-8" />}
-                    </button>
+                    <div className="md:hidden flex items-center gap-4">
+                        {/* Mobile Audio Toggle */}
+                        <button
+                            onClick={() => { playClick(); toggleAudio(); }}
+                            className="text-neutral-400 hover:text-red-500 transition-colors"
+                        >
+                            {isAudioPlaying ? <Volume2 className="w-6 h-6 text-red-500" /> : <VolumeX className="w-6 h-6" />}
+                        </button>
+
+                        <button
+                            className="text-white p-2"
+                            onClick={() => { playClick(); setIsOpen(!isOpen) }}
+                        >
+                            {isOpen ? <X className="w-8 h-8 text-red-500" /> : <Menu className="w-8 h-8" />}
+                        </button>
+                    </div>
                 </div>
             </motion.nav>
 
@@ -196,6 +229,7 @@ export function CyberpunkNavbar() {
                                     animate={{ opacity: 1, x: 0 }}
                                     transition={{ delay: index * 0.1 }}
                                     onClick={() => scrollToSection(item.to)}
+                                    // Removed playHover here as it might be annoying on scroll/touch
                                     className="flex items-center gap-6 group w-full text-left"
                                 >
                                     <div className="w-12 h-12 rounded-lg bg-neutral-900/50 border border-white/10 flex items-center justify-center group-hover:border-red-500/50 group-hover:bg-red-900/20 transition-all">

@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { Send, Zap, Mail, Phone, Lock, Terminal } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { useLanguage } from "@/app/context/LanguageContext"
+import { useExperience } from "@/app/context/ExperienceContext"
 
 export function Contact() {
     const [formState, setFormState] = useState({
@@ -21,6 +22,7 @@ export function Contact() {
         contact_phone: "+229 01 97 20 90 37",
         whatsapp_number: "2290197209037"
     })
+    const { playHover, playClick } = useExperience()
 
     useEffect(() => {
         const fetchSettings = async () => {
@@ -39,6 +41,7 @@ export function Contact() {
     }, [])
 
     const handleSubmit = async (e: React.FormEvent) => {
+        playClick()
         e.preventDefault()
         setStatus('sending')
 
@@ -191,6 +194,7 @@ export function Contact() {
 
                             <button
                                 type="submit"
+                                onMouseEnter={playHover}
                                 disabled={status === 'sending' || status === 'success'}
                                 className="w-full group relative py-4 bg-red-600 hover:bg-red-700 text-white font-heading font-bold tracking-widest uppercase rounded overflow-hidden transition-all shadow-[0_0_20px_rgba(220,38,38,0.4)] hover:shadow-[0_0_30px_rgba(220,38,38,0.6)] disabled:opacity-50 disabled:cursor-not-allowed"
                             >
@@ -226,6 +230,8 @@ export function Contact() {
                                 href={`https://wa.me/${settings.whatsapp_number}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
+                                onClick={playClick}
+                                onMouseEnter={playHover}
                                 className="block w-full group relative"
                             >
                                 <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500 to-green-600 rounded opacity-75 blur opacity-20 group-hover:opacity-40 transition duration-1000 group-hover:duration-200 animate-pulse-slow" />

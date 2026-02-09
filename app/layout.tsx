@@ -30,6 +30,7 @@ const inter = Inter({
 
 import { LanguageProvider } from '@/app/context/LanguageContext'
 import { ModalProvider } from '@/app/context/ModalContext'
+import { ExperienceProvider } from '@/app/context/ExperienceContext'
 import { CustomCursor } from "@/components/ui/CustomCursor"
 import { PagePreloader } from "@/components/ui/PagePreloader"
 import { KevinAssistant } from "@/components/ui/KevinAssistant"
@@ -80,12 +81,14 @@ export default function RootLayout({
         inter.variable
       )}>
         <LanguageProvider>
-          <ModalProvider>
-            <PagePreloader />
-            <CustomCursor />
-            <KevinAssistant />
-            {children}
-          </ModalProvider>
+          <ExperienceProvider>
+            <ModalProvider>
+              <PagePreloader />
+              <CustomCursor />
+              <KevinAssistant />
+              {children}
+            </ModalProvider>
+          </ExperienceProvider>
         </LanguageProvider>
       </body>
     </html>

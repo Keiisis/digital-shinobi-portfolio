@@ -6,6 +6,7 @@ import { Star, MessageSquarePlus } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { TestimonialModal } from "@/components/ui/TestimonialModal"
 import { useLanguage } from "@/app/context/LanguageContext"
+import { useExperience } from "@/app/context/ExperienceContext"
 
 interface Testimonial {
     id: string
@@ -21,6 +22,7 @@ export function Testimonials() {
     const [alliances, setAlliances] = useState<Testimonial[]>([])
     const [isModalOpen, setIsModalOpen] = useState(false)
     const { t } = useLanguage()
+    const { playHover, playClick } = useExperience()
 
     useEffect(() => {
         const fetchTestimonials = async () => {
@@ -126,7 +128,8 @@ export function Testimonials() {
 
                 <div className="flex justify-center">
                     <button
-                        onClick={() => setIsModalOpen(true)}
+                        onClick={() => { playClick(); setIsModalOpen(true) }}
+                        onMouseEnter={playHover}
                         className="group relative px-8 py-3 bg-transparent border border-white/20 hover:border-red-500 text-neutral-400 hover:text-white transition-all uppercase text-xs tracking-[0.2em] overflow-hidden"
                     >
                         <span className="relative z-10 flex items-center gap-2">
