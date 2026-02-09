@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Plus, Search, Filter, Eye, Edit, Trash2, Globe, Image as ImageIcon, X, Save, Upload } from "lucide-react"
+import { Plus, Search, Filter, Eye, Edit, Trash2, Globe, Image as ImageIcon, X, Save, Upload, PlayCircle } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { motion, AnimatePresence } from "framer-motion"
 import { AIEnhanceButton } from "@/components/admin/AIEnhanceButton"
@@ -323,57 +323,97 @@ export default function ProjectsPage() {
                                         </div>
 
                                         {/* Videos Section - Only for video categories */}
-                                        {(() => {
-                                            const currentCategory = categories.find(c => c.name === formData.category)
-                                            const supportsVideos = currentCategory?.supports_videos ?? false
+                                        {/* Videos Section - Available for ALL categories as requested */}
+                                        <div className="mt-6 border-t border-white/10 pt-6">
+                                            <div className="flex justify-between items-center mb-4">
+                                                <label className="text-xs text-neutral-400 uppercase tracking-widest block font-bold">
+                                                    Galerie Vidéos <span className="text-red-500 text-[10px] uppercase ml-2 opacity-60">Youtube / Vimeo</span>
+                                                </label>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setFormData({ ...formData, videos: [...(formData.videos || []), ""] })}
+                                                    className="w-8 h-8 rounded-full bg-red-600/20 hover:bg-red-600/40 text-red-500 flex items-center justify-center transition-all"
+                                                >
+                                                    <Plus size={16} />
+                                                </button>
+                                            </div>
 
-                                            if (!supportsVideos) return null
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                {/* Video list with previews */}
+                                                {(formData.videos || []).map((videoUrl, index) => {
+                                                    // Helper to get embed URL for preview
+                                                    let embedUrl = "";
+                                                    if (videoUrl) {
+                                                        if (videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be')) {
+                                                            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+                                                            const match = videoUrl.match(regExp);
+                                                            if (match && match[2].length === 11) embedUrl = `https://www.youtube.com/embed/${match[2]}`;
+                                                        } else if (videoUrl.includes('vimeo.com')) {
+                                                            const match = videoUrl.match(/vimeo.com\/(\d+)/);
+                                                            if (match) embedUrl = `https://player.vimeo.com/video/${match[1]}`;
+                                                        }
+                                                    }
 
-                                            return (
-                                                <div>
-                                                    <label className="text-xs text-neutral-400 uppercase tracking-widest block mb-2">
-                                                        Vidéos (YouTube, Vimeo, etc.)
-                                                    </label>
-                                                    <div className="space-y-2">
-                                                        {formData.videos.map((videoUrl, index) => (
-                                                            <div key={index} className="flex items-center gap-2 p-2 bg-black border border-white/10 rounded">
+                                                    return (
+                                                        <div key={index} className="bg-black/40 border border-white/10 rounded-lg p-3 space-y-3 relative group hover:border-white/30 transition-colors">
+                                                            <div className="flex items-center gap-2 mb-2">
+                                                                <div className="w-6 h-6 rounded-full bg-neutral-800 flex items-center justify-center text-[10px] text-neutral-500 font-mono border border-white/5">
+                                                                    {index + 1}
+                                                                </div>
                                                                 <input
                                                                     type="url"
                                                                     value={videoUrl}
                                                                     onChange={(e) => {
-                                                                        const newVideos = [...formData.videos]
+                                                                        const newVideos = [...(formData.videos || [])]
                                                                         newVideos[index] = e.target.value
                                                                         setFormData({ ...formData, videos: newVideos })
                                                                     }}
-                                                                    className="flex-1 bg-transparent border-none text-white text-xs outline-none"
-                                                                    placeholder="https://youtube.com/watch?v=..."
+                                                                    className="flex-1 bg-transparent border-b border-white/10 py-1 text-white text-xs outline-none focus:border-red-500 transition-colors placeholder:text-neutral-700 font-mono"
+                                                                    placeholder="https://..."
                                                                 />
                                                                 <button
                                                                     type="button"
                                                                     onClick={() => {
-                                                                        setFormData({
-                                                                            ...formData,
-                                                                            videos: formData.videos.filter((_, i) => i !== index)
-                                                                        })
+                                                                        const newVideos = [...(formData.videos || [])].filter((_, i) => i !== index)
+                                                                        setFormData({ ...formData, videos: newVideos })
                                                                     }}
-                                                                    className="text-red-500 hover:text-red-400"
+                                                                    className="p-1.5 hover:bg-red-500/20 rounded text-neutral-600 hover:text-red-500 transition-colors"
                                                                 >
-                                                                    <X className="w-4 h-4" />
+                                                                    <Trash2 size={14} />
                                                                 </button>
                                                             </div>
-                                                        ))}
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => setFormData({ ...formData, videos: [...formData.videos, ""] })}
-                                                            className="w-full py-2 border-2 border-dashed border-white/10 rounded text-neutral-500 hover:border-red-500/50 hover:text-white transition-colors text-xs flex items-center justify-center gap-2"
-                                                        >
-                                                            <Plus className="w-4 h-4" /> Ajouter une vidéo
-                                                        </button>
-                                                        <p className="text-[10px] text-neutral-500">Ajoutez les URLs de vos vidéos (YouTube, Vimeo, etc.)</p>
+
+                                                            {/* Preview */}
+                                                            {embedUrl ? (
+                                                                <div className="aspect-video w-full rounded overflow-hidden bg-black border border-white/5 relative group/preview">
+                                                                    <iframe
+                                                                        src={embedUrl}
+                                                                        className="w-full h-full pointer-events-none opacity-60 group-hover/preview:opacity-100 transition-opacity"
+                                                                        title="Video Preview"
+                                                                    />
+                                                                </div>
+                                                            ) : (
+                                                                <div className="aspect-video w-full rounded bg-white/5 flex items-center justify-center border border-white/5 border-dashed">
+                                                                    <p className="text-[10px] text-neutral-600 uppercase tracking-wider">Aperçu indisponible</p>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    )
+                                                })}
+
+                                                {(!formData.videos || formData.videos.length === 0) && (
+                                                    <div
+                                                        onClick={() => setFormData({ ...formData, videos: [""] })}
+                                                        className="col-span-1 md:col-span-2 border border-dashed border-white/10 rounded-lg p-8 flex flex-col items-center justify-center gap-3 cursor-pointer hover:bg-white/5 hover:border-white/20 transition-all group"
+                                                    >
+                                                        <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-red-500/20 group-hover:text-red-500 transition-colors text-neutral-500">
+                                                            <PlayCircle size={20} />
+                                                        </div>
+                                                        <span className="text-xs text-neutral-500 group-hover:text-neutral-300 uppercase tracking-widest font-bold">Ajouter une première vidéo</span>
                                                     </div>
-                                                </div>
-                                            )
-                                        })()}
+                                                )}
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
 
