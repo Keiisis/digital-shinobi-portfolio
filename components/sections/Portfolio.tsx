@@ -17,6 +17,7 @@ interface Project {
     images?: string[]
     description?: string
     link?: string
+    direct_link?: boolean
     file_url?: string
     videos?: string[]
     views?: number
@@ -135,13 +136,15 @@ export function Portfolio() {
                                     viewport={{ once: true }}
                                     className="group relative aspect-[16/9] cursor-pointer"
                                     onClick={() => {
-                                        // Intelligent Click Handling
-                                        if (project.link) {
+                                        // Intelligent Click Handling Logic with Direct Link Toggle
+                                        if (project.direct_link && project.link) {
+                                            // 1. Direct Link Mode: Open External URL immediately
                                             window.open(project.link, '_blank')
-                                        } else if (project.file_url) {
+                                        } else if (project.direct_link && project.file_url) {
+                                            // 2. Direct File Mode: Open File immediately
                                             window.open(project.file_url, '_blank')
                                         } else {
-                                            // Open Modal for Gallery/Details
+                                            // 3. Default (Gallery Mode): Open Modal for Gallery/Details/Videos
                                             setSelectedProject(project)
                                         }
                                     }}

@@ -16,6 +16,7 @@ interface Project {
     videos?: string[]
     description?: string
     link?: string
+    direct_link?: boolean
     views?: number
 }
 
@@ -41,6 +42,7 @@ export default function ProjectsPage() {
         status: "draft",
         description: "",
         link: "",
+        direct_link: false,
         image_url: "",
         images: [] as string[],
         videos: [] as string[]
@@ -84,6 +86,7 @@ export default function ProjectsPage() {
             status: project.status,
             description: project.description || "",
             link: project.link || "",
+            direct_link: project.direct_link || false,
             image_url: project.image_url || "",
             images: initialImages,
             videos: project.videos || []
@@ -170,7 +173,7 @@ export default function ProjectsPage() {
 
             setIsFormOpen(false)
             setEditingProject(null)
-            setFormData({ title: "", category: categories[0]?.name || "WEB DESIGN", status: "draft", description: "", link: "", image_url: "", images: [], videos: [] })
+            setFormData({ title: "", category: categories[0]?.name || "WEB DESIGN", status: "draft", description: "", link: "", direct_link: false, image_url: "", images: [], videos: [] })
             setImageFile(null)
             fetchProjects()
         } catch (error) {
@@ -193,7 +196,7 @@ export default function ProjectsPage() {
                 <button
                     onClick={() => {
                         setEditingProject(null)
-                        setFormData({ title: "", category: categories[0]?.name || "WEB DESIGN", status: "draft", description: "", link: "", image_url: "", images: [], videos: [] })
+                        setFormData({ title: "", category: categories[0]?.name || "WEB DESIGN", status: "draft", description: "", link: "", direct_link: false, image_url: "", images: [], videos: [] })
                         setIsFormOpen(true)
                     }}
                     className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-sm tracking-wider uppercase rounded shadow-[0_0_15px_rgba(220,38,38,0.4)] flex items-center gap-2 transition-all"
@@ -248,11 +251,29 @@ export default function ProjectsPage() {
                                                 <label className="text-xs text-neutral-400 uppercase tracking-widest block mb-2">
                                                     {formData.category === "MOTION" ? "Lien Vidéo (YouTube/Vimeo)" : "Lien Public (URL)"}
                                                 </label>
-                                                <input
-                                                    value={formData.link} onChange={(e) => setFormData({ ...formData, link: e.target.value })}
-                                                    className="w-full bg-black border border-white/10 rounded p-3 text-white focus:border-red-500 outline-none transition-colors"
-                                                    placeholder="https://..."
-                                                />
+                                                <div className="flex gap-2">
+                                                    <input
+                                                        value={formData.link} onChange={(e) => setFormData({ ...formData, link: e.target.value })}
+                                                        className="flex-1 bg-black border border-white/10 rounded p-3 text-white focus:border-red-500 outline-none transition-colors"
+                                                        placeholder="https://..."
+                                                    />
+
+                                                    {/* Direct Link Switch */}
+                                                    <div
+                                                        className={`flex flex-col items-center justify-center px-3 rounded border cursor-pointer transition-all ${formData.direct_link
+                                                            ? 'bg-emerald-900/20 border-emerald-500/50'
+                                                            : 'bg-black border-white/10 hover:border-white/30'}`}
+                                                        onClick={() => setFormData({ ...formData, direct_link: !formData.direct_link })}
+                                                        title="Si activé, le clic sur la carte redirige directement vers le lien sans ouvrir la modale."
+                                                    >
+                                                        <span className={`text-[9px] uppercase font-bold tracking-wider mb-1 ${formData.direct_link ? 'text-emerald-400' : 'text-neutral-500'}`}>
+                                                            {formData.direct_link ? 'Direct' : 'Galerie'}
+                                                        </span>
+                                                        <div className={`w-8 h-4 rounded-full relative transition-colors ${formData.direct_link ? 'bg-emerald-500' : 'bg-neutral-800'}`}>
+                                                            <div className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-transform ${formData.direct_link ? 'left-4.5' : 'left-0.5'}`} style={{ left: formData.direct_link ? 'calc(100% - 0.125rem - 0.75rem)' : '0.125rem' }} />
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </div>
                                         )}
 
