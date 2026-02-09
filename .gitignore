@@ -36,6 +36,17 @@ yarn-error.log*
 # vercel
 .vercel
 
+# AI Agents & Tools
+.agents/
+.agent/
+.gemini/
+.brain/
+.knowledge/
+
+# Temporary files
+*_output.txt
+*.log
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
