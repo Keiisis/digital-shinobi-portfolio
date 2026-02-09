@@ -37,13 +37,80 @@ export function KevinAssistant() {
     const [isSpeakerOn, setIsSpeakerOn] = useState(true)
     const [visitorId, setVisitorId] = useState("")
     const [settings, setSettings] = useState<any>(null)
+    const [speechSupported, setSpeechSupported] = useState(false)
 
     const scrollRef = useRef<HTMLDivElement>(null)
     const recognitionRef = useRef<any>(null)
     const synthRef = useRef<SpeechSynthesis | null>(null)
+    const isProcessingRef = useRef(false)
 
     // Get language and translation function
     const { t, language } = useLanguage()
+
+    // Initialize Speech APIs once on mount
+    useEffect(() => {
+        if (typeof window === 'undefined') return
+
+        synthRef.current = window.speechSynthesis
+
+        // Check for Speech Recognition support
+        const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+        if (SpeechRecognition) {
+            setSpeechSupported(true)
+            const recognition = new SpeechRecognition()
+            recognition.continuous = false
+            recognition.interimResults = false
+            recognition.lang = getSpeechLocale(language)
+
+            recognition.onresult = (event: any) => {
+                const transcript = event.results[0][0].transcript
+                console.log('[Voice] Recognized:', transcript)
+                if (transcript.trim()) {
+                    handleSendMessage(transcript)
+                }
+            }
+
+            recognition.onerror = (event: any) => {
+                console.error('[Voice] Recognition error:', event.error)
+                setIsListening(false)
+                // Restart if it was an aborted error and we're still in voice mode
+                if (event.error === 'aborted' || event.error === 'no-speech') {
+                    // Will be restarted by restartListening
+                }
+            }
+
+            recognition.onend = () => {
+                console.log('[Voice] Recognition ended')
+                setIsListening(false)
+            }
+
+            recognition.onstart = () => {
+                console.log('[Voice] Recognition started')
+                setIsListening(true)
+            }
+
+            recognitionRef.current = recognition
+        } else {
+            console.warn('[Voice] Speech Recognition not supported in this browser')
+        }
+
+        // Cleanup
+        return () => {
+            if (recognitionRef.current) {
+                try { recognitionRef.current.abort() } catch (e) { }
+            }
+            if (synthRef.current) {
+                synthRef.current.cancel()
+            }
+        }
+    }, []) // Empty dependency - only run once
+
+    // Update recognition language when language changes
+    useEffect(() => {
+        if (recognitionRef.current) {
+            recognitionRef.current.lang = getSpeechLocale(language)
+        }
+    }, [language])
 
     // Load settings and visitor ID
     useEffect(() => {
@@ -59,56 +126,50 @@ export function KevinAssistant() {
             setVisitorId(vid)
         }
         load()
+    }, [])
 
-        if (typeof window !== 'undefined') {
-            synthRef.current = window.speechSynthesis
-
-            // Setup Speech Recognition
-            const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
-            if (SpeechRecognition) {
-                recognitionRef.current = new SpeechRecognition()
-                recognitionRef.current.continuous = false
-                // Set language dynamically
-                recognitionRef.current.lang = getSpeechLocale(language)
-
-                recognitionRef.current.onresult = (event: any) => {
-                    const transcript = event.results[0][0].transcript
-                    handleSendMessage(transcript)
-                }
-
-                recognitionRef.current.onend = () => {
-                    // Automatically restart listening if in voice mode and not muted and not currently typing
-                    if (mode === 'voice' && !isMuted && !isTyping) {
-                        // Small delay to prevent overlap
-                        setTimeout(() => {
-                            if (mode === 'voice' && !isMuted && !isTyping) {
-                                try { recognitionRef.current.start() } catch (e) { }
-                            }
-                        }, 500)
-                    }
-                    setIsListening(false)
-                }
-
-                recognitionRef.current.onstart = () => setIsListening(true)
-            }
-        }
-    }, [mode, isMuted, isTyping, language]) // Added language dependency
-
-    // Update recognition language when language changes
-    useEffect(() => {
-        if (recognitionRef.current) {
-            recognitionRef.current.lang = getSpeechLocale(language)
-        }
-    }, [language])
-
+    // Scroll to bottom on new messages
     useEffect(() => {
         if (scrollRef.current) {
             scrollRef.current.scrollTop = scrollRef.current.scrollHeight
         }
     }, [messages, isTyping])
 
-    const speak = useCallback((text: string) => {
-        if (!synthRef.current || !isSpeakerOn) return
+    // Start listening function
+    const startListening = useCallback(() => {
+        if (!recognitionRef.current || isMuted || isProcessingRef.current) return
+
+        try {
+            recognitionRef.current.lang = getSpeechLocale(language)
+            recognitionRef.current.start()
+            console.log('[Voice] Starting to listen...')
+        } catch (e: any) {
+            // Already started or other error
+            if (e.name !== 'InvalidStateError') {
+                console.error('[Voice] Failed to start recognition:', e)
+            }
+        }
+    }, [isMuted, language])
+
+    // Stop listening function
+    const stopListening = useCallback(() => {
+        if (!recognitionRef.current) return
+
+        try {
+            recognitionRef.current.stop()
+            console.log('[Voice] Stopping listening...')
+        } catch (e) {
+            // Already stopped
+        }
+        setIsListening(false)
+    }, [])
+
+    // Speak function with proper restart after speaking
+    const speak = useCallback((text: string, onComplete?: () => void) => {
+        if (!synthRef.current || !isSpeakerOn) {
+            onComplete?.()
+            return
+        }
 
         // Cancel any current speech
         synthRef.current.cancel()
@@ -119,31 +180,34 @@ export function KevinAssistant() {
 
         // Try to find a suitable voice for the locale
         const voices = synthRef.current.getVoices()
-        // Try to find a 'Google' or 'Microsoft' voice for the language first as they are usually better
         let voice = voices.find(v => v.lang === locale && (v.name.includes('Google') || v.name.includes('Microsoft')))
-
-        // If not found, try any voice for the language
         if (!voice) {
             voice = voices.find(v => v.lang.startsWith(language))
         }
-
         if (voice) utterance.voice = voice
 
-        utterance.pitch = 0.9 // Slightly deeper
-        utterance.rate = 1.0 // Normal speed
+        utterance.pitch = 0.9
+        utterance.rate = 1.0
 
         utterance.onend = () => {
-            // Restart listening after assistant finishes speaking
-            if (mode === 'voice' && !isMuted) {
-                try { recognitionRef.current.start() } catch (e) { }
-            }
+            console.log('[Voice] Speech ended')
+            onComplete?.()
+        }
+
+        utterance.onerror = (e) => {
+            console.error('[Voice] Speech error:', e)
+            onComplete?.()
         }
 
         synthRef.current.speak(utterance)
-    }, [isSpeakerOn, mode, isMuted, language])
+    }, [isSpeakerOn, language])
 
-    const handleSendMessage = async (text: string) => {
-        if (!text.trim()) return
+    // Handle sending messages
+    const handleSendMessage = useCallback(async (text: string) => {
+        if (!text.trim() || isProcessingRef.current) return
+
+        isProcessingRef.current = true
+        stopListening()
 
         const userMsg: Message = { role: 'user', content: text }
         setMessages(prev => [...prev, userMsg])
@@ -151,9 +215,6 @@ export function KevinAssistant() {
         setIsTyping(true)
 
         try {
-            // Ensure recognition is stopped while processing
-            if (recognitionRef.current) try { recognitionRef.current.stop() } catch (e) { }
-
             const response = await fetch('/api/assistant/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -161,7 +222,7 @@ export function KevinAssistant() {
                     messages: [...messages, userMsg],
                     visitorId,
                     type: mode,
-                    language: language // Pass language to backend to ensure response is in correct language
+                    language: language
                 })
             })
 
@@ -170,42 +231,71 @@ export function KevinAssistant() {
 
             setMessages(prev => [...prev, assistantMsg])
 
-            if (mode === 'voice') {
-                speak(data.message)
+            if (mode === 'voice' && isSpeakerOn) {
+                // Speak the response, then restart listening
+                speak(data.message, () => {
+                    isProcessingRef.current = false
+                    if (mode === 'voice' && !isMuted) {
+                        setTimeout(() => startListening(), 300)
+                    }
+                })
+            } else {
+                isProcessingRef.current = false
+                if (mode === 'voice' && !isMuted) {
+                    setTimeout(() => startListening(), 300)
+                }
             }
         } catch (error) {
             console.error('Chat error:', error)
+            isProcessingRef.current = false
+            if (mode === 'voice' && !isMuted) {
+                setTimeout(() => startListening(), 300)
+            }
         } finally {
             setIsTyping(false)
         }
-    }
+    }, [messages, visitorId, mode, language, isMuted, isSpeakerOn, speak, startListening, stopListening])
 
-    const startCall = () => {
+    // Start a voice call
+    const startCall = useCallback(() => {
         setIsOpen(true)
         setMode('voice')
         setIsCalling(true)
+        setIsMuted(false)
+
         // Dynamic welcome message
         const welcomeTemplate = t("assistant.speech.welcome")
         const welcome = welcomeTemplate.replace("{name}", settings?.name || 'Kevin Assistant')
-        speak(welcome)
-    }
 
-    const endCall = () => {
+        // Speak welcome, then start listening
+        speak(welcome, () => {
+            console.log('[Voice] Welcome message finished, starting to listen...')
+            setTimeout(() => startListening(), 500)
+        })
+    }, [settings, t, speak, startListening])
+
+    // End the call
+    const endCall = useCallback(() => {
         setIsCalling(false)
         setMode('chat')
+        stopListening()
         if (synthRef.current) synthRef.current.cancel()
-        if (recognitionRef.current) try { recognitionRef.current.stop() } catch (e) { }
-    }
+    }, [stopListening])
 
-    const toggleMute = () => {
-        setIsMuted(!isMuted)
-        if (!isMuted && recognitionRef.current) {
-            try { recognitionRef.current.stop() } catch (e) { }
-        } else if (recognitionRef.current) {
-            try { recognitionRef.current.start() } catch (e) { }
+    // Toggle mute
+    const toggleMute = useCallback(() => {
+        if (isMuted) {
+            // Unmuting - start listening
+            setIsMuted(false)
+            setTimeout(() => startListening(), 200)
+        } else {
+            // Muting - stop listening
+            setIsMuted(true)
+            stopListening()
         }
-    }
+    }, [isMuted, startListening, stopListening])
 
+    // Send report when closing
     const sendReport = async () => {
         if (messages.length === 0) return
         await fetch('/api/assistant/report', {

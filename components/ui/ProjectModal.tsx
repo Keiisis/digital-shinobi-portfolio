@@ -53,29 +53,31 @@ export function ProjectModal({ project, isOpen, onClose }: ProjectModalProps) {
     return (
         <AnimatePresence>
             {isOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8">
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 md:p-8">
                     {/* Backdrop */}
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         onClick={onClose}
-                        className="absolute inset-0 bg-black/90 backdrop-blur-md"
+                        className="absolute inset-0 bg-black/95 backdrop-blur-md"
                     />
 
                     {/* Modal Content */}
                     <motion.div
-                        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                        initial={{ opacity: 0, scale: 0.98, y: 10 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                        exit={{ opacity: 0, scale: 0.98, y: 10 }}
+                        transition={{ duration: 0.2 }}
                         className="relative w-full max-w-6xl h-[100dvh] md:h-[85vh] bg-neutral-900 border-none md:border md:border-white/10 rounded-none md:rounded-xl overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.8)] flex flex-col md:flex-row"
                     >
-                        {/* Close Button - Adapted for mobile safe area */}
+                        {/* Close Button - Fixed for mobile with safe area support */}
                         <button
                             onClick={onClose}
-                            className="absolute top-4 right-4 z-50 p-2 bg-black/50 hover:bg-red-600 rounded-full text-white transition-colors border border-white/10 backdrop-blur-md"
+                            className="absolute top-[max(1rem,env(safe-area-inset-top))] right-4 z-[110] p-3 bg-black/80 hover:bg-red-600 active:bg-red-700 rounded-full text-white transition-colors border-2 border-white/20 backdrop-blur-md shadow-lg shadow-black/50 md:top-4 md:p-2 md:border"
+                            aria-label="Fermer"
                         >
-                            <X size={24} />
+                            <X size={28} className="md:w-6 md:h-6" />
                         </button>
 
                         {/* Image Section (Left / Top) - 40% height on mobile, full width */}

@@ -56,26 +56,28 @@ export function TestimonialModal({ isOpen, onClose }: TestimonialModalProps) {
     return (
         <AnimatePresence>
             {isOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         onClick={onClose}
-                        className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+                        className="absolute inset-0 bg-black/90 backdrop-blur-md"
                     />
 
                     <motion.div
-                        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                        initial={{ opacity: 0, scale: 0.98, y: 10 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                        className="relative w-full max-w-lg bg-neutral-900 border border-white/10 rounded-xl p-8 shadow-2xl"
+                        exit={{ opacity: 0, scale: 0.98, y: 10 }}
+                        transition={{ duration: 0.2 }}
+                        className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto bg-neutral-900 border border-white/10 rounded-xl p-6 md:p-8 shadow-2xl"
                     >
                         <button
                             onClick={onClose}
-                            className="absolute top-4 right-4 text-neutral-500 hover:text-white transition-colors"
+                            className="absolute top-3 right-3 z-[110] p-2 bg-black/50 hover:bg-red-600 active:bg-red-700 rounded-full text-white transition-colors border border-white/20 md:top-4 md:right-4 md:p-1.5 md:bg-transparent md:border-0"
+                            aria-label="Fermer"
                         >
-                            <X size={20} />
+                            <X size={22} className="md:w-5 md:h-5" />
                         </button>
 
                         {success ? (

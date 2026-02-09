@@ -29,19 +29,133 @@
   --primary-rgb: 229, 9, 20;
 }
 
+/* ========================================
+   PERFORMANCE OPTIMIZATIONS
+   ======================================== */
+
+/* GPU acceleration for smooth animations */
+*,
+*::before,
+*::after {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Optimize images and heavy elements */
+img,
+video,
+iframe {
+  content-visibility: auto;
+}
+
+/* Reduce motion for users who prefer it and for better mobile performance */
+@media (prefers-reduced-motion: reduce) {
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ========================================
+   MOBILE-SPECIFIC OPTIMIZATIONS
+   ======================================== */
+
+/* Disable heavy effects on mobile for performance */
+@media (max-width: 768px) {
+
+  /* Reduce backdrop blur intensity on mobile */
+  .backdrop-blur-md {
+    backdrop-filter: blur(8px);
+  }
+
+  .backdrop-blur-sm {
+    backdrop-filter: blur(4px);
+  }
+
+  .backdrop-blur-xl {
+    backdrop-filter: blur(12px);
+  }
+
+  /* Simplify box shadows on mobile */
+  .shadow-2xl {
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+  }
+
+  /* Disable fixed background on mobile (causes performance issues) */
+  body {
+    background-attachment: scroll !important;
+  }
+
+  /* Optimize filter/glow effects on mobile */
+  .glow-red,
+  .glow-blue {
+    filter: none;
+  }
+
+  /* Reduce animation complexity */
+  .animate-pulse {
+    animation: none;
+  }
+}
+
+/* Touch-friendly scrolling */
+.custom-scrollbar,
+[class*="overflow-y-auto"],
+[class*="overflow-x-auto"] {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+/* Hide scrollbar on mobile for cleaner look */
+@media (max-width: 768px) {
+  .custom-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .custom-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+/* ========================================
+   BODY & BASE STYLES
+   ======================================== */
+
 body {
   background-color: #000000;
   background-image:
     linear-gradient(to bottom, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.8)),
-    url("https://images.unsplash.com/photo-1543722530-d2c3201371e7?q=80&w=2074&auto=format&fit=crop");
-  /* Darker, redder nebula */
+    url("https://images.unsplash.com/photo-1543722530-d2c3201371e7?q=80&w=1024&auto=format&fit=crop");
   background-size: cover;
   background-attachment: fixed;
   background-position: center;
   color: #ffffff;
+  /* Prevent horizontal scroll */
+  overflow-x: hidden;
+  /* Smooth scroll for anchor links */
+  scroll-behavior: smooth;
 }
 
-/* Precise Glow Utilities */
+/* Safe area support for notched phones */
+@supports (padding: env(safe-area-inset-top)) {
+  body {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+}
+
+/* ========================================
+   GLOW UTILITIES (Optimized)
+   ======================================== */
+
 .glow-red {
   filter: drop-shadow(0 0 5px rgba(229, 9, 20, 0.5)) drop-shadow(0 0 10px rgba(229, 9, 20, 0.3));
 }
@@ -56,4 +170,105 @@ body {
 
 .border-glow {
   box-shadow: 0 0 15px rgba(229, 9, 20, 0.2), inset 0 0 10px rgba(229, 9, 20, 0.1);
+}
+
+/* ========================================
+   MODAL & OVERLAY OPTIMIZATIONS
+   ======================================== */
+
+/* Ensure modals always appear above navigation */
+[class*="z-[100]"] {
+  isolation: isolate;
+}
+
+/* Improve touch targets on mobile */
+@media (max-width: 768px) {
+
+  button,
+  [role="button"],
+  a {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Except for inline text links */
+  a:not([class]) {
+    min-height: auto;
+    min-width: auto;
+  }
+}
+
+/* ========================================
+   IMAGE OPTIMIZATIONS
+   ======================================== */
+
+img {
+  /* Prevent layout shift */
+  height: auto;
+  max-width: 100%;
+  /* Optimize rendering */
+  image-rendering: -webkit-optimize-contrast;
+}
+
+/* Lazy loading placeholder */
+img[loading="lazy"] {
+  background: linear-gradient(90deg, #1a1a1a 25%, #2a2a2a 50%, #1a1a1a 75%);
+  background-size: 200% 100%;
+}
+
+/* ========================================
+   TYPOGRAPHY COMPRESSION
+   ======================================== */
+
+@media (max-width: 768px) {
+
+  /* Reduce font sizes on mobile */
+  .text-4xl {
+    font-size: 1.75rem;
+  }
+
+  .text-5xl {
+    font-size: 2rem;
+  }
+
+  .text-6xl {
+    font-size: 2.25rem;
+  }
+
+  /* Tighter letter spacing on mobile */
+  .tracking-widest {
+    letter-spacing: 0.1em;
+  }
+
+  .tracking-wider {
+    letter-spacing: 0.05em;
+  }
+
+  /* Reduce padding/margins on mobile */
+  .p-8 {
+    padding: 1.25rem;
+  }
+
+  .p-12 {
+    padding: 2rem;
+  }
+
+  .py-20 {
+    padding-top: 3rem;
+    padding-bottom: 3rem;
+  }
+
+  .py-32 {
+    padding-top: 4rem;
+    padding-bottom: 4rem;
+  }
+
+  /* Compress gaps */
+  .gap-8 {
+    gap: 1.5rem;
+  }
+
+  .gap-12 {
+    gap: 2rem;
+  }
 }
