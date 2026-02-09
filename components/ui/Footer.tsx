@@ -7,17 +7,88 @@ import Link from "next/link"
 import { ExternalLink, Github, Linkedin, Twitter, Instagram, Shield } from "lucide-react"
 import { useLanguage } from "@/app/context/LanguageContext"
 
+interface SocialLink {
+    name: string
+    icon: React.ComponentType<{ className?: string }>
+    href: string
+    key: string
+}
+
 export function Footer() {
-    const [socials, setSocials] = useState<any[]>([])
+    const [socialLinks, setSocialLinks] = useState<SocialLink[]>([])
     const { t } = useLanguage()
 
-    // Placeholder for future dynamic socials if we add a table
-    const socialLinks = [
-        { name: "LinkedIn", icon: Linkedin, href: "https://linkedin.com/in/keiis" },
-        { name: "Instagram", icon: Instagram, href: "https://instagram.com/keiis.osiris" },
-        { name: "GitHub", icon: Github, href: "https://github.com/keiis" },
-        { name: "Twitter", icon: Twitter, href: "https://twitter.com/keiis_osiris" },
-    ]
+    // Fetch social links from settings
+    useEffect(() => {
+        const fetchSocialLinks = async () => {
+            const { data } = await supabase.from('site_settings').select('*')
+            if (data) {
+                const settings: Record<string, string> = {}
+                data.forEach((item: any) => { settings[item.key] = item.value })
+
+                // Build social links array from settings
+                const links: SocialLink[] = []
+
+                if (settings['social_linkedin']) {
+                    links.push({
+                        name: 'LinkedIn',
+                        icon: Linkedin,
+                        href: settings['social_linkedin'],
+                        key: 'linkedin'
+                    })
+                }
+
+                if (settings['social_instagram']) {
+                    links.push({
+                        name: 'Instagram',
+                        icon: Instagram,
+                        href: settings['social_instagram'],
+                        key: 'instagram'
+                    })
+                }
+
+                if (settings['social_github']) {
+                    links.push({
+                        name: 'GitHub',
+                        icon: Github,
+                        href: settings['social_github'],
+                        key: 'github'
+                    })
+                }
+
+                if (settings['social_twitter']) {
+                    links.push({
+                        name: 'Twitter',
+                        icon: Twitter,
+                        href: settings['social_twitter'],
+                        key: 'twitter'
+                    })
+                }
+
+                // If no links configured, use defaults
+                if (links.length === 0) {
+                    links.push(
+                        { name: "LinkedIn", icon: Linkedin, href: "https://linkedin.com/in/keiis", key: 'linkedin' },
+                        { name: "Instagram", icon: Instagram, href: "https://instagram.com/keiis.osiris", key: 'instagram' },
+                        { name: "GitHub", icon: Github, href: "https://github.com/keiis", key: 'github' },
+                        { name: "Twitter", icon: Twitter, href: "https://twitter.com/keiis_osiris", key: 'twitter' }
+                    )
+                }
+
+                setSocialLinks(links)
+            }
+        }
+
+        fetchSocialLinks()
+
+        // Listen for settings updates from admin panel
+        const handleUpdates = () => fetchSocialLinks()
+        window.addEventListener('settingsUpdated', handleUpdates)
+
+        return () => {
+            window.removeEventListener('settingsUpdated', handleUpdates)
+        }
+    }, [])
 
     return (
         <footer className="relative bg-neutral-950 border-t border-white/5 pt-16 pb-8 overflow-hidden">
@@ -37,15 +108,17 @@ export function Footer() {
                         </p>
                         <div className="flex gap-4">
                             {socialLinks.map((social) => (
-                                <a
-                                    key={social.name}
+                                <motion.a
+                                    key={social.key}
                                     href={social.href}
                                     target="_blank"
                                     rel="noopener noreferrer"
+                                    whileHover={{ scale: 1.1, y: -2 }}
+                                    whileTap={{ scale: 0.95 }}
                                     className="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center text-neutral-400 hover:text-white hover:border-red-500 hover:bg-red-900/10 transition-all duration-300 group"
                                 >
                                     <social.icon className="w-4 h-4 group-hover:scale-110 transition-transform" />
-                                </a>
+                                </motion.a>
                             ))}
                         </div>
                     </div>

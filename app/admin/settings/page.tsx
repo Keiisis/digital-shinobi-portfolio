@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation"
 import { useEffect, useState, Suspense } from "react"
-import { Save, Loader2, Monitor, Type, Mail, User, Lock, Shield, Globe, Image as ImageIcon, Upload, Bot, Sparkles } from "lucide-react"
+import { Save, Loader2, Monitor, Type, Mail, User, Lock, Shield, Globe, Image as ImageIcon, Upload, Bot, Sparkles, Share2, Github, Linkedin, Twitter, Instagram } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { motion } from "framer-motion"
 import { ImageUpload } from "@/components/ui/ImageUpload"
@@ -43,6 +43,7 @@ function AdminSettingsContent() {
         if (tab === 'GLOBAL') setActiveTab('GLOBAL')
         else if (tab === 'NAVBAR') setActiveTab('NAVBAR')
         else if (tab === 'ASSISTANT') setActiveTab('ASSISTANT')
+        else if (tab === 'SOCIALS') setActiveTab('SOCIALS')
         else setActiveTab('PROFILE')
 
         fetchSettings()
@@ -203,6 +204,13 @@ function AdminSettingsContent() {
                 >
                     <Sparkles className="w-4 h-4 inline-block mr-2 text-amber-400" /> Assistant IA
                     {activeTab === "ASSISTANT" && <motion.div layoutId="tab" className="absolute bottom-0 left-0 w-full h-0.5 bg-red-500 shadow-[0_0_10px_rgba(220,38,38,0.5)]" />}
+                </button>
+                <button
+                    onClick={() => setActiveTab("SOCIALS")}
+                    className={`px-6 py-3 text-sm font-bold tracking-wider uppercase transition-colors relative whitespace-nowrap ${activeTab === "SOCIALS" ? "text-red-500" : "text-neutral-500 hover:text-white"}`}
+                >
+                    <Share2 className="w-4 h-4 inline-block mr-2 text-cyan-400" /> Comptes Sociaux
+                    {activeTab === "SOCIALS" && <motion.div layoutId="tab" className="absolute bottom-0 left-0 w-full h-0.5 bg-red-500 shadow-[0_0_10px_rgba(220,38,38,0.5)]" />}
                 </button>
             </div>
 
@@ -686,6 +694,102 @@ function AdminSettingsContent() {
                             >
                                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                                 Initialiser l'Assistant
+                            </button>
+                        </div>
+                    </div>
+                </motion.div>
+            )}
+
+            {/* TAB CONTENT: SOCIALS */}
+            {activeTab === "SOCIALS" && (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
+                    <div className="bg-neutral-900/50 border border-white/5 rounded-xl p-6 md:p-8 space-y-6 backdrop-blur-sm">
+                        <div className="flex items-center gap-4 mb-6 pb-6 border-b border-white/5">
+                            <div className="w-16 h-16 rounded-full bg-cyan-900/20 border border-cyan-500/30 flex items-center justify-center text-cyan-500">
+                                <Share2 className="w-8 h-8" />
+                            </div>
+                            <div>
+                                <h3 className="text-xl font-bold text-white uppercase tracking-wide">Comptes Sociaux</h3>
+                                <p className="text-neutral-500 text-xs font-mono">Renseignez vos liens de réseaux sociaux pour le Footer.</p>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* LinkedIn */}
+                            <div>
+                                <label className="block text-xs uppercase text-neutral-400 mb-2 tracking-widest flex items-center gap-2">
+                                    <Linkedin className="w-4 h-4 text-[#0077B5]" /> LinkedIn
+                                </label>
+                                <input
+                                    type="url"
+                                    value={settings['social_linkedin'] || ''}
+                                    onChange={(e) => setSettings({ ...settings, social_linkedin: e.target.value })}
+                                    className="w-full bg-black border border-white/10 rounded p-3 text-white focus:border-cyan-500 outline-none transition-colors font-mono text-sm"
+                                    placeholder="https://linkedin.com/in/votre-profil"
+                                />
+                            </div>
+
+                            {/* Instagram */}
+                            <div>
+                                <label className="block text-xs uppercase text-neutral-400 mb-2 tracking-widest flex items-center gap-2">
+                                    <Instagram className="w-4 h-4 text-[#E4405F]" /> Instagram
+                                </label>
+                                <input
+                                    type="url"
+                                    value={settings['social_instagram'] || ''}
+                                    onChange={(e) => setSettings({ ...settings, social_instagram: e.target.value })}
+                                    className="w-full bg-black border border-white/10 rounded p-3 text-white focus:border-cyan-500 outline-none transition-colors font-mono text-sm"
+                                    placeholder="https://instagram.com/votre-profil"
+                                />
+                            </div>
+
+                            {/* GitHub */}
+                            <div>
+                                <label className="block text-xs uppercase text-neutral-400 mb-2 tracking-widest flex items-center gap-2">
+                                    <Github className="w-4 h-4 text-white" /> GitHub
+                                </label>
+                                <input
+                                    type="url"
+                                    value={settings['social_github'] || ''}
+                                    onChange={(e) => setSettings({ ...settings, social_github: e.target.value })}
+                                    className="w-full bg-black border border-white/10 rounded p-3 text-white focus:border-cyan-500 outline-none transition-colors font-mono text-sm"
+                                    placeholder="https://github.com/votre-profil"
+                                />
+                            </div>
+
+                            {/* Twitter/X */}
+                            <div>
+                                <label className="block text-xs uppercase text-neutral-400 mb-2 tracking-widest flex items-center gap-2">
+                                    <Twitter className="w-4 h-4 text-[#1DA1F2]" /> Twitter / X
+                                </label>
+                                <input
+                                    type="url"
+                                    value={settings['social_twitter'] || ''}
+                                    onChange={(e) => setSettings({ ...settings, social_twitter: e.target.value })}
+                                    className="w-full bg-black border border-white/10 rounded p-3 text-white focus:border-cyan-500 outline-none transition-colors font-mono text-sm"
+                                    placeholder="https://twitter.com/votre-profil"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="mt-4 p-4 bg-cyan-900/10 border border-cyan-500/20 rounded-lg">
+                            <div className="flex items-start gap-3">
+                                <Share2 className="w-5 h-5 text-cyan-400 mt-0.5 shrink-0" />
+                                <div className="text-xs text-cyan-200">
+                                    <strong className="block text-cyan-400 mb-1">OÙ CES LIENS APPARAISSENT ?</strong>
+                                    Ces liens seront affichés en bas de votre site dans la section <strong>Footer</strong>, juste en dessous de la description "DIGITAL {'>'} SHINOBI". Laissez un champ vide pour ne pas afficher l'icône correspondante.
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex justify-end pt-6 border-t border-white/5">
+                            <button
+                                onClick={handleSaveGlobal}
+                                disabled={saving}
+                                className="bg-cyan-600 hover:bg-cyan-500 text-white px-8 py-3 rounded font-bold uppercase text-sm tracking-widest transition-all flex items-center gap-2 disabled:opacity-50"
+                            >
+                                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                                Sauvegarder Réseaux
                             </button>
                         </div>
                     </div>
