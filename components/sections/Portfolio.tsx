@@ -41,23 +41,37 @@ const isSupabaseUrl = (url: string): boolean => {
 export function Portfolio() {
     const [activeTab, setActiveTab] = useState("TOUT")
     const [projects, setProjects] = useState<Project[]>([])
+    const [categories, setCategories] = useState<string[]>([])
     const [loading, setLoading] = useState(true)
     const [selectedProject, setSelectedProject] = useState<Project | null>(null)
     const { t } = useLanguage()
 
     useEffect(() => {
-        const fetchProjects = async () => {
-            const { data } = await supabase
+        const fetchData = async () => {
+            // Fetch projects
+            const { data: projectsData } = await supabase
                 .from('projects')
                 .select('*')
                 .eq('status', 'published')
                 .order('created_at', { ascending: false })
 
-            if (data) setProjects(data as Project[])
+            if (projectsData) setProjects(projectsData as Project[])
+
+            // Fetch categories
+            const { data: categoriesData } = await supabase
+                .from('project_categories')
+                .select('name')
+                .eq('is_active', true)
+                .order('display_order')
+
+            if (categoriesData) {
+                setCategories(categoriesData.map(c => c.name))
+            }
+
             setLoading(false)
         }
 
-        fetchProjects()
+        fetchData()
     }, [])
 
     const filteredProjects = activeTab === "TOUT"
@@ -78,7 +92,7 @@ export function Portfolio() {
 
                     {/* Tabs matching ref: Red underline for active, subtle text for others */}
                     <div className="flex flex-wrap justify-center gap-8 mb-16 border-b border-white/10 pb-1">
-                        {["TOUT", "DESIGN GRAPHIQUE", "WEB DESIGN", "AUTOMATISATION", "COMMUNITY MANAGEMENT"].map((filter) => (
+                        {["TOUT", ...categories].map((filter) => (
                             <button
                                 key={filter}
                                 onClick={() => setActiveTab(filter)}
