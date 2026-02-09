@@ -407,7 +407,7 @@ export function ProjectModal({ project, isOpen, onClose }: ProjectModalProps) {
                                 </motion.div>
                             </div>
 
-                            {/* Fixed CTA at bottom */}
+                            {/* Fixed CTA at bottom - Intelligent Dynamic Button */}
                             {project.link && (
                                 <motion.div
                                     initial={{ opacity: 0, y: 20 }}
@@ -420,10 +420,24 @@ export function ProjectModal({ project, isOpen, onClose }: ProjectModalProps) {
                                         href={project.link}
                                         target="_blank"
                                         rel="noreferrer"
-                                        className="w-full flex items-center justify-center gap-3 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white font-bold py-4 px-6 uppercase tracking-widest transition-all duration-300 rounded-xl group shadow-lg shadow-red-900/30 hover:shadow-red-600/40 hover:-translate-y-0.5"
+                                        className="relative w-full flex items-center justify-center gap-4 bg-black border border-red-600 overflow-hidden group py-4 px-6 rounded-xl transition-all duration-300 hover:shadow-[0_0_30px_rgba(220,38,38,0.4)]"
                                     >
-                                        <span className="text-sm">{t("portfolio.view_project", "Voir le projet")}</span>
-                                        <ExternalLink size={16} className="group-hover:translate-x-1 group-hover:-translate-y-0.5 transition-transform" />
+                                        {/* Animated Background */}
+                                        <div className="absolute inset-0 bg-red-600/10 translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-out sm:skew-y-12" />
+
+                                        {/* Glitch Effect Borders */}
+                                        <span className="absolute top-0 left-0 w-2 h-2 border-t-2 border-l-2 border-red-600 transition-all duration-300 group-hover:w-full group-hover:h-full opacity-50" />
+                                        <span className="absolute bottom-0 right-0 w-2 h-2 border-b-2 border-r-2 border-red-600 transition-all duration-300 group-hover:w-full group-hover:h-full opacity-50" />
+
+                                        {/* Text Content */}
+                                        <span className="relative z-10 text-white font-orbitron font-bold uppercase tracking-widest text-sm sm:text-base group-hover:text-red-100 transition-colors">
+                                            {project.category === 'AUTOMATISATION' ? t("portfolio.view_workflow", "Accéder au Workflow") : t("portfolio.view_project", "Visiter le projet")}
+                                        </span>
+
+                                        {/* Dynamic Icon */}
+                                        <div className="relative z-10 p-1 bg-red-600 rounded-full group-hover:scale-110 group-hover:rotate-45 transition-all duration-300 shadow-lg shadow-red-900/50">
+                                            <ExternalLink size={16} className="text-black group-hover:text-white transition-colors" />
+                                        </div>
                                     </a>
                                 </motion.div>
                             )}
