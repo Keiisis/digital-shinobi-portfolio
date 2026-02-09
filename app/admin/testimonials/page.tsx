@@ -157,7 +157,7 @@ export default function AdminTestimonials() {
                                                     <img src={t.avatar_url} alt={t.name} className="w-full h-full object-cover" />
                                                 ) : (
                                                     <div className="w-full h-full flex items-center justify-center text-xl font-bold text-white/20">
-                                                        {t.name[0]}
+                                                        {t.name ? t.name[0] : '?'}
                                                     </div>
                                                 )}
                                             </div>

@@ -46,18 +46,21 @@ export function Contact() {
         setStatus('sending')
 
         try {
-            const { error } = await supabase
-                .from('messages')
-                .insert([
-                    {
-                        name: formState.name,
-                        email: formState.email,
-                        domain: formState.domain,
-                        content: formState.message
-                    }
-                ])
+            const response = await fetch('/api/contact', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: formState.name,
+                    email: formState.email,
+                    domain: formState.domain,
+                    content: formState.message
+                })
+            })
 
-            if (error) throw error
+            if (!response.ok) {
+                const errorData = await response.json()
+                throw new Error(errorData.error || 'Erreur lors de la transmission')
+            }
 
             setStatus('success')
             setFormState({ name: "", email: "", domain: "", message: "" })

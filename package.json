@@ -16,6 +16,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
+    "exa-js": "^2.3.0",
     "framer-motion": "^12.33.0",
     "groq-sdk": "^0.37.0",
     "lucide-react": "^0.563.0",
@@ -23,15 +24,18 @@
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "sharp": "^0.34.5",
-    "tailwind-merge": "^3.4.0"
+    "tailwind-merge": "^3.4.0",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
+    "@types/nodemailer": "^7.0.9",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
+    "nodemailer": "^8.0.1",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vercel": "^50.13.2"

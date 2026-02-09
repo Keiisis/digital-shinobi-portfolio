@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
-import { Trash2, Mail, MailOpen, User, Clock, CheckCircle2, Loader2, Search } from "lucide-react"
+import { Trash2, Mail, MailOpen, User, Clock, CheckCircle2, Loader2, Search, Send, Zap } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { cn } from "@/lib/utils"
 // import { formatDistanceToNow } from "date-fns" // Assuming date-fns is available or use native
@@ -15,12 +15,20 @@ interface Message {
     domain: string
     content: string
     read: boolean
+    reply_sent?: boolean
+    reply_content?: string
 }
 
 export default function AdminMessages() {
     const [messages, setMessages] = useState<Message[]>([])
     const [loading, setLoading] = useState(true)
     const [filter, setFilter] = useState<'all' | 'unread' | 'read'>('all')
+
+    // Reply State
+    const [replyingTo, setReplyingTo] = useState<Message | null>(null)
+    const [replyText, setReplyText] = useState("")
+    const [isEnhancing, setIsEnhancing] = useState(false)
+    const [isSendingReply, setIsSendingReply] = useState(false)
 
     useEffect(() => {
         fetchMessages()
@@ -73,6 +81,55 @@ export default function AdminMessages() {
         }
     }
 
+    const handleEnhance = async () => {
+        if (!replyText || !replyingTo) return
+        setIsEnhancing(true)
+        try {
+            const res = await fetch('/api/contact/enhance', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    text: replyText,
+                    clientName: replyingTo.name,
+                    domain: replyingTo.domain
+                })
+            })
+            const data = await res.json()
+            if (data.enhancedText) setReplyText(data.enhancedText)
+        } catch (err) {
+            console.error(err)
+        } finally {
+            setIsEnhancing(false)
+        }
+    }
+
+    const sendManualReply = async () => {
+        if (!replyText || !replyingTo) return
+        setIsSendingReply(true)
+        try {
+            const res = await fetch('/api/contact/reply', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    messageId: replyingTo.id,
+                    clientEmail: replyingTo.email,
+                    clientName: replyingTo.name,
+                    replyContent: replyText
+                })
+            })
+            if (res.ok) {
+                alert("Réponse envoyée avec succès !")
+                setReplyingTo(null)
+                setReplyText("")
+                fetchMessages()
+            }
+        } catch (err) {
+            console.error(err)
+        } finally {
+            setIsSendingReply(false)
+        }
+    }
+
     const filteredMessages = messages.filter(m => {
         if (filter === 'unread') return !m.read
         if (filter === 'read') return m.read
@@ -82,7 +139,7 @@ export default function AdminMessages() {
     const unreadCount = messages.filter(m => !m.read).length
 
     return (
-        <div className="space-y-8">
+        <div className="space-y-8 relative">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
                     <h1 className="font-orbitron text-3xl text-white font-bold tracking-wider uppercase">Voix des Clans</h1>
@@ -167,6 +224,18 @@ export default function AdminMessages() {
                                             </div>
 
                                             <div className="flex items-center gap-2">
+                                                {msg.reply_sent && (
+                                                    <span className="text-[10px] font-bold text-green-500 uppercase flex items-center gap-1 mr-2 px-2 py-1 rounded border border-green-500/20 bg-green-500/5">
+                                                        <CheckCircle2 className="w-3 h-3" /> Répondu
+                                                    </span>
+                                                )}
+                                                <button
+                                                    onClick={() => setReplyingTo(msg)}
+                                                    className="p-2 rounded text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10 transition-colors"
+                                                    title="Répondre"
+                                                >
+                                                    <Send className="w-4 h-4" />
+                                                </button>
                                                 <button
                                                     onClick={() => toggleReadStatus(msg.id, msg.read)}
                                                     className={cn(
@@ -192,6 +261,13 @@ export default function AdminMessages() {
                                         <p className="text-sm leading-relaxed whitespace-pre-wrap font-sans">
                                             {msg.content}
                                         </p>
+
+                                        {msg.reply_sent && msg.reply_content && (
+                                            <div className="mt-4 p-4 rounded bg-white/5 border border-white/5 italic text-neutral-400 text-xs">
+                                                <div className="font-bold text-[10px] uppercase mb-2 text-neutral-600">Ta réponse :</div>
+                                                {msg.reply_content}
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </motion.div>
@@ -199,6 +275,73 @@ export default function AdminMessages() {
                     </AnimatePresence>
                 </div>
             )}
+
+            {/* Reply Modal */}
+            <AnimatePresence>
+                {replyingTo && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setReplyingTo(null)}
+                            className="absolute inset-0 bg-black/80 backdrop-blur-md"
+                        />
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                            className="bg-neutral-900 border border-red-500/30 w-full max-w-2xl rounded-xl overflow-hidden relative z-10 flex flex-col max-h-[90vh]"
+                        >
+                            <div className="p-6 border-b border-white/10 flex justify-between items-center bg-black/40">
+                                <div>
+                                    <h3 className="font-orbitron font-bold text-lg text-white">RÉPONSE CLANDESTINE</h3>
+                                    <p className="text-xs text-neutral-500 font-mono">Vers : {replyingTo.email}</p>
+                                </div>
+                                <button onClick={() => setReplyingTo(null)} className="text-neutral-500 hover:text-white transition-colors">
+                                    <Trash2 className="w-6 h-6" />
+                                </button>
+                            </div>
+
+                            <div className="p-6 overflow-y-auto space-y-4">
+                                <div className="p-4 bg-white/5 rounded border border-white/5">
+                                    <div className="text-[10px] uppercase text-neutral-500 font-bold mb-1">Message d'origine :</div>
+                                    <p className="text-sm text-neutral-400 italic">"{replyingTo.content}"</p>
+                                </div>
+
+                                <textarea
+                                    className="w-full bg-black border border-white/10 rounded-lg p-4 text-white font-rajdhani text-lg min-h-[200px] focus:border-red-500 outline-none transition-all placeholder:text-neutral-800"
+                                    placeholder="Écris ton message ici..."
+                                    value={replyText}
+                                    onChange={(e) => setReplyText(e.target.value)}
+                                />
+
+                                <div className="flex gap-4">
+                                    <button
+                                        onClick={handleEnhance}
+                                        disabled={isEnhancing || !replyText}
+                                        className="flex-1 flex items-center justify-center gap-3 py-3 px-6 rounded bg-cyan-600 hover:bg-cyan-500 text-white font-bold font-orbitron text-xs tracking-widest transition-all disabled:opacity-50 group"
+                                    >
+                                        {isEnhancing ? <Loader2 className="w-4 h-4 animate-spin text-white" /> : <Zap className="w-4 h-4 group-hover:scale-125 transition-transform" />}
+                                        AMÉLIORER PAR L'IA (PNL/BUSINESS)
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="p-6 border-t border-white/10 bg-black/40">
+                                <button
+                                    onClick={sendManualReply}
+                                    disabled={isSendingReply || !replyText}
+                                    className="w-full flex items-center justify-center gap-3 py-4 rounded bg-red-600 hover:bg-red-700 text-white font-bold font-orbitron tracking-[0.3em] transition-all disabled:opacity-50"
+                                >
+                                    {isSendingReply ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
+                                    ENVOYER LA RÉPONSE
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     )
 }
