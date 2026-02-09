@@ -26,10 +26,12 @@ export function ProjectModal({ project, isOpen, onClose }: ProjectModalProps) {
     const x = useMotionValue(0)
     const opacity = useTransform(x, [-200, 0, 200], [0.5, 1, 0.5])
 
-    // Images array
-    const images = project?.images && project.images.length > 0
+    // Images array logic with robustness check
+    const rawImages = project?.images && project.images.length > 0
         ? project.images
         : project?.image_url ? [project.image_url] : []
+
+    const images = rawImages.filter((img: string) => img && typeof img === 'string' && img.length > 0)
 
     // Notify context when modal opens/closes
     useEffect(() => {

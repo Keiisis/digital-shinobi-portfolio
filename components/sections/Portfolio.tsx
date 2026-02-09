@@ -18,6 +18,7 @@ interface Project {
     description?: string
     link?: string
     file_url?: string
+    videos?: string[]
     views?: number
 }
 

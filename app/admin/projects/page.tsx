@@ -71,6 +71,13 @@ export default function ProjectsPage() {
 
     const handleEdit = (project: Project) => {
         setEditingProject(project)
+
+        // Ensure existing single image is added to gallery for legacy projects
+        let initialImages = project.images || []
+        if (initialImages.length === 0 && project.image_url) {
+            initialImages = [project.image_url]
+        }
+
         setFormData({
             title: project.title,
             category: project.category,
@@ -78,7 +85,7 @@ export default function ProjectsPage() {
             description: project.description || "",
             link: project.link || "",
             image_url: project.image_url || "",
-            images: project.images || [],
+            images: initialImages,
             videos: project.videos || []
         })
         setIsFormOpen(true)
