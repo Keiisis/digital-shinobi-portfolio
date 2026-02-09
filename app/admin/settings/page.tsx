@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation"
 import { useEffect, useState, Suspense } from "react"
-import { Save, Loader2, Monitor, Type, Mail, User, Lock, Shield, Globe, Image as ImageIcon, Upload, Bot, Sparkles, Share2, Github, Linkedin, Twitter, Instagram } from "lucide-react"
+import { Save, Loader2, Monitor, Type, Mail, User, Lock, Shield, Globe, Image as ImageIcon, Upload, Bot, Sparkles, Share2, Github, Linkedin, Twitter, Instagram, Zap, BarChart3, Terminal } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { motion } from "framer-motion"
 import { ImageUpload } from "@/components/ui/ImageUpload"
@@ -13,6 +13,10 @@ function AdminSettingsContent() {
     const [saving, setSaving] = useState(false)
     const [activeTab, setActiveTab] = useState("PROFILE") // PROFILE | GLOBAL | NAVBAR | ASSISTANT
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
+    const [reportOutput, setReportOutput] = useState<string | null>(null)
+    const [isGeneratingReport, setIsGeneratingReport] = useState(false)
+    const [isBoostingSEO, setIsBoostingSEO] = useState(false)
+    const [seoResult, setSeoResult] = useState<any>(null)
 
     const searchParams = useSearchParams()
 
@@ -125,6 +129,45 @@ function AdminSettingsContent() {
             setMessage({ type: 'error', text: "Erreur lors de la sauvegarde de l'assistant." })
         } finally {
             setSaving(false)
+        }
+    }
+
+    const handleGenerateReport = async () => {
+        setIsGeneratingReport(true)
+        setReportOutput(null)
+        try {
+            const res = await fetch('/api/admin/assistant/report', { method: 'POST' })
+            const data = await res.json()
+            if (data.report) setReportOutput(data.report)
+            else throw new Error()
+        } catch (error) {
+            setMessage({ type: 'error', text: "Erreur lors de la génération du rapport." })
+        } finally {
+            setIsGeneratingReport(false)
+        }
+    }
+
+    const handleSEOBoost = async () => {
+        setIsBoostingSEO(true)
+        setSeoResult(null)
+        try {
+            const res = await fetch('/api/admin/assistant/seo-boost', { method: 'POST' })
+            const data = await res.json()
+            if (data.meta_description) {
+                setSeoResult(data)
+                // Automatiquement mettre à jour les réglages site
+                const updates = [
+                    { key: 'seo_description', value: data.meta_description },
+                    { key: 'seo_keywords', value: data.keywords.join(', ') },
+                    { key: 'seo_structured_data', value: JSON.stringify(data.structured_data) }
+                ]
+                await supabase.from('site_settings').upsert(updates, { onConflict: 'key' })
+                setMessage({ type: 'success', text: "Boost SEO Neural activé et injecté dans la base." })
+            } else throw new Error()
+        } catch (error) {
+            setMessage({ type: 'error', text: "Erreur lors du Boost SEO." })
+        } finally {
+            setIsBoostingSEO(false)
         }
     }
 
@@ -595,7 +638,10 @@ function AdminSettingsContent() {
             {/* TAB CONTENT: ASSISTANT SETTINGS */}
             {activeTab === "ASSISTANT" && (
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
-                    <div className="bg-neutral-900/50 border border-white/5 rounded-xl p-6 md:p-8 space-y-6 backdrop-blur-sm">
+                    {/* Main Config */}
+                    <div className="bg-neutral-900/50 border border-white/5 rounded-xl p-6 md:p-8 space-y-6 backdrop-blur-sm relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/5 blur-[100px] pointer-events-none" />
+
                         <div className="flex items-center gap-4 mb-6 pb-6 border-b border-white/5">
                             <div className="w-16 h-16 rounded-full bg-amber-900/20 border border-amber-500/30 flex items-center justify-center text-amber-500">
                                 <Bot className="w-8 h-8" />
@@ -607,13 +653,106 @@ function AdminSettingsContent() {
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* Tools Section */}
+                            <div className="col-span-1 md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                {/* Strategic Report Button */}
+                                <div className="group relative">
+                                    <div className="absolute -inset-0.5 bg-gradient-to-r from-amber-600 to-red-600 rounded-lg blur opacity-20 group-hover:opacity-40 transition duration-1000"></div>
+                                    <button
+                                        onClick={handleGenerateReport}
+                                        disabled={isGeneratingReport}
+                                        className="relative w-full flex items-center justify-between p-4 bg-black border border-white/10 rounded-lg hover:border-amber-500/50 transition-all overflow-hidden"
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded bg-amber-900/20 flex items-center justify-center text-amber-500">
+                                                {isGeneratingReport ? <Loader2 className="w-5 h-5 animate-spin" /> : <BarChart3 className="w-5 h-5" />}
+                                            </div>
+                                            <div className="text-left">
+                                                <h4 className="text-sm font-bold text-white tracking-widest uppercase">Intelligence Report</h4>
+                                                <p className="text-[10px] text-neutral-500 uppercase">Générer un briefing complet du site</p>
+                                            </div>
+                                        </div>
+                                        <Bot className="w-4 h-4 text-amber-500/50 group-hover:translate-x-1 transition-transform" />
+                                    </button>
+                                </div>
+
+                                {/* SEO Neural Boost Button */}
+                                <div className="group relative">
+                                    <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-600 to-cyan-600 rounded-lg blur opacity-20 group-hover:opacity-40 transition duration-1000"></div>
+                                    <button
+                                        onClick={handleSEOBoost}
+                                        disabled={isBoostingSEO}
+                                        className="relative w-full flex items-center justify-between p-4 bg-black border border-white/10 rounded-lg hover:border-cyan-500/50 transition-all overflow-hidden"
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded bg-cyan-900/20 flex items-center justify-center text-cyan-500">
+                                                {isBoostingSEO ? <Sparkles className="w-5 h-5 animate-pulse" /> : <Zap className="w-5 h-5" />}
+                                            </div>
+                                            <div className="text-left">
+                                                <h4 className="text-sm font-bold text-white tracking-widest uppercase">SEO Neural Boost</h4>
+                                                <p className="text-[10px] text-neutral-500 uppercase">Injection Blackhat & PNL Automatique</p>
+                                            </div>
+                                        </div>
+                                        <Sparkles className="w-4 h-4 text-cyan-500/50 group-hover:rotate-12 transition-transform" />
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Report / Results Zone */}
+                            {(reportOutput || seoResult) && (
+                                <div className="col-span-1 md:col-span-2 space-y-4">
+                                    <motion.div
+                                        initial={{ height: 0, opacity: 0 }}
+                                        animate={{ height: 'auto', opacity: 1 }}
+                                        className="bg-black border border-white/10 rounded-lg overflow-hidden"
+                                    >
+                                        <div className="flex items-center justify-between px-4 py-2 border-b border-white/5 bg-neutral-900/50">
+                                            <div className="flex gap-1.5">
+                                                <div className="w-2 h-2 rounded-full bg-red-500/50" />
+                                                <div className="w-2 h-2 rounded-full bg-amber-500/50" />
+                                                <div className="w-2 h-2 rounded-full bg-green-500/50" />
+                                            </div>
+                                            <span className="text-[9px] font-mono text-neutral-500 uppercase tracking-widest">
+                                                {reportOutput ? "Terminal Analysis Output" : "Neural Optimization Logs"}
+                                            </span>
+                                        </div>
+                                        <div className="p-4 max-h-80 overflow-y-auto font-mono text-xs leading-relaxed text-neutral-300 custom-scrollbar">
+                                            {reportOutput && (
+                                                <div className="whitespace-pre-wrap">
+                                                    <span className="text-amber-500">$ digital-shinobi --generate-strategic-brief</span><br />
+                                                    <span className="text-blue-500">[INFO] Compiling database entries...</span><br />
+                                                    <span className="text-blue-500">[INFO] Running Llama-3-70B Logic engine...</span><br /><br />
+                                                    {reportOutput}
+                                                </div>
+                                            )}
+                                            {seoResult && (
+                                                <div className="space-y-4">
+                                                    <div className="p-2 border border-cyan-500/20 bg-cyan-500/5 rounded">
+                                                        <span className="text-cyan-500 font-bold tracking-widest text-[10px] uppercase">Injection PNL Réussie :</span>
+                                                        <ul className="mt-2 list-disc list-inside space-y-1 text-cyan-200/80 italic">
+                                                            {seoResult.pnl_hooks.map((hook: string, i: number) => (
+                                                                <li key={i}>{hook}</li>
+                                                            ))}
+                                                        </ul>
+                                                    </div>
+                                                    <div>
+                                                        <span className="text-green-500 font-bold text-[10px] uppercase">Status : </span>
+                                                        <span className="text-white">Base de données mise à jour avec les nouvelles méta-données neurales.</span>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </motion.div>
+                                </div>
+                            )}
+
                             <div className="col-span-1 md:col-span-2">
                                 <label className="block text-xs uppercase text-neutral-400 mb-2 tracking-widest">Nom de l'Assistant</label>
                                 <input
                                     type="text"
                                     value={assistant.name}
                                     onChange={(e) => setAssistant({ ...assistant, name: e.target.value })}
-                                    className="w-full bg-black border border-white/10 rounded p-3 text-white focus:border-amber-500 outline-none transition-colors"
+                                    className="w-full bg-black border border-white/10 rounded p-3 text-white focus:border-amber-500 outline-none transition-colors font-orbitron"
                                     placeholder="Ex: Kevin Assistant"
                                 />
                             </div>
