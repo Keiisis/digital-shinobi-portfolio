@@ -120,26 +120,45 @@ export function ProjectModal({ project, isOpen, onClose }: ProjectModalProps) {
             transition: { type: "spring", damping: 25, stiffness: 300 }
         },
         katana: {
-            // Aggressive diagonal slice reveal
-            initial: { opacity: 0, clipPath: "polygon(0 0, 0 0, 0 100%, 0% 100%)", x: -50 },
-            animate: { opacity: 1, clipPath: "polygon(0 0, 100% 0, 100% 100%, 0% 100%)", x: 0 },
-            exit: { opacity: 0, clipPath: "polygon(100% 0, 100% 0, 100% 100%, 100% 100%)" },
-            transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] } // Custom cubic-bezier for "sharp" feel
+            // High-velocity diagonal slice reveal
+            initial: {
+                opacity: 0,
+                clipPath: "polygon(0 0, 0 0, 0 100%, 0% 100%)",
+                x: -150,
+                skewX: -20,
+                scale: 0.85,
+                filter: "blur(10px) brightness(2)"
+            },
+            animate: {
+                opacity: 1,
+                clipPath: "polygon(0 0, 100% 0, 100% 100%, 0% 100%)",
+                x: 0,
+                skewX: 0,
+                scale: 1,
+                filter: "blur(0px) brightness(1)"
+            },
+            exit: {
+                opacity: 0,
+                clipPath: "polygon(100% 0, 100% 0, 100% 100%, 100% 100%)",
+                x: 150,
+                skewX: 20,
+                scale: 1.1,
+                filter: "blur(10px) brightness(0.5)"
+            },
+            transition: { duration: 0.7, ease: [0.23, 1, 0.32, 1] }
         }
     }
 
     const currentVariant = isKatanaParams ? modalVariants.katana : modalVariants.default
 
-    if (!isOpen || !project) return null
-
     return (
-        <AnimatePresence>
-            {isOpen && (
+        <AnimatePresence mode="wait">
+            {(isOpen && project) && (
                 <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="fixed inset-0 z-[200] flex items-center justify-center"
+                    className="fixed inset-0 z-[200] flex items-center justify-center p-4 md:p-8"
                 >
                     {/* Animated Background */}
                     <motion.div

@@ -91,19 +91,32 @@ export function ExperienceProvider({ children }: { children: React.ReactNode }) 
 
     // Manage BG Music Source
     useEffect(() => {
-        if (settings['xp_audio_url']) {
+        const audioUrl = settings['xp_audio_url'] || '/audio/background.mp3'
+        const initialVolume = parseFloat(settings['xp_audio_volume'] || '0.1')
+
+        if (audioUrl) {
             if (!bgMusicRef.current) {
-                bgMusicRef.current = new Audio(settings['xp_audio_url'])
+                bgMusicRef.current = new Audio(audioUrl)
                 bgMusicRef.current.loop = true
-            } else if (bgMusicRef.current.src !== settings['xp_audio_url']) {
-                const wasPlaying = !bgMusicRef.current.paused
-                bgMusicRef.current.src = settings['xp_audio_url']
-                if (wasPlaying) bgMusicRef.current.play().catch(e => console.log("Autoplay blocked"))
+
+                // Track actual playing state
+                bgMusicRef.current.onplay = () => setIsAudioPlaying(true)
+                bgMusicRef.current.onpause = () => setIsAudioPlaying(false)
+            } else {
+                const currentSrc = bgMusicRef.current.src
+                const targetUrl = audioUrl.startsWith('http') ? audioUrl : window.location.origin + audioUrl
+
+                if (currentSrc !== targetUrl) {
+                    const wasPlaying = !bgMusicRef.current.paused
+                    bgMusicRef.current.src = audioUrl
+                    if (wasPlaying) bgMusicRef.current.play().catch(e => console.log("Autoplay blocked"))
+                }
             }
-            bgMusicRef.current.volume = parseFloat(settings['xp_audio_volume'] || '0.2')
-            setAudioVolume(parseFloat(settings['xp_audio_volume'] || '0.2'))
+
+            bgMusicRef.current.volume = audioVolume
+            setAudioVolume(initialVolume)
         }
-    }, [settings['xp_audio_url']])
+    }, [settings['xp_audio_url'], audioVolume])
 
     const fetchSettings = async () => {
         const { data } = await supabase.from('site_settings').select('*')
@@ -111,6 +124,11 @@ export function ExperienceProvider({ children }: { children: React.ReactNode }) 
             const map: any = {}
             data.forEach((item: any) => map[item.key] = item.value)
             setSettings(map)
+
+            // Set initial volume from DB if present
+            if (map['xp_audio_volume']) {
+                setAudioVolume(parseFloat(map['xp_audio_volume']))
+            }
         }
     }
 
@@ -132,21 +150,23 @@ export function ExperienceProvider({ children }: { children: React.ReactNode }) 
         }, 3000)
     }
 
-    // --- SFX GENERATOR (No files needed, super light) ---
+    // --- SFX GENERATOR ---
     const playOscillator = (type: OscillatorType, freq: number, duration: number, vol = 0.1) => {
         if (settings['xp_sfx_enabled'] === 'false') return
         if (!audioContextRef.current) return
 
         const ctx = audioContextRef.current
+        if (ctx.state === 'suspended') ctx.resume()
+
         const osc = ctx.createOscillator()
         const gain = ctx.createGain()
 
         osc.type = type
         osc.frequency.setValueAtTime(freq, ctx.currentTime)
-        osc.frequency.exponentialRampToValueAtTime(freq * 0.5, ctx.currentTime + duration)
+        osc.frequency.exponentialRampToValueAtTime(freq * 0.8, ctx.currentTime + duration)
 
         gain.gain.setValueAtTime(vol, ctx.currentTime)
-        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration)
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration)
 
         osc.connect(gain)
         gain.connect(ctx.destination)
@@ -156,35 +176,48 @@ export function ExperienceProvider({ children }: { children: React.ReactNode }) 
     }
 
     const playHover = () => {
-        // High tech chirp
-        playOscillator('sine', 2000, 0.05, 0.02)
+        // High tech chirp - softer
+        playOscillator('sine', 1500, 0.08, 0.01)
     }
 
     const playClick = () => {
-        // Confirm beep
-        playOscillator('square', 800, 0.1, 0.05)
+        // Confirm beep - precise
+        playOscillator('sine', 800, 0.15, 0.03)
     }
 
     const playSwoosh = () => {
-        // Noise burst (simulated with low freq saw)
+        // Improved "Cyber Swoosh" using high-pass filtered white noise
         if (settings['xp_sfx_enabled'] === 'false') return
         if (!audioContextRef.current) return
 
         const ctx = audioContextRef.current
-        const osc = ctx.createOscillator()
+        if (ctx.state === 'suspended') ctx.resume()
+
+        const bufferSize = ctx.sampleRate * 0.4
+        const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate)
+        const data = buffer.getChannelData(0)
+        for (let i = 0; i < bufferSize; i++) {
+            data[i] = Math.random() * 2 - 1
+        }
+
+        const noise = ctx.createBufferSource()
+        noise.buffer = buffer
+
+        const filter = ctx.createBiquadFilter()
+        filter.type = 'highpass'
+        filter.frequency.setValueAtTime(1000, ctx.currentTime)
+        filter.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.4)
+
         const gain = ctx.createGain()
+        gain.gain.setValueAtTime(0.08, ctx.currentTime)
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4)
 
-        osc.type = 'sawtooth'
-        osc.frequency.setValueAtTime(100, ctx.currentTime)
-        osc.frequency.linearRampToValueAtTime(0, ctx.currentTime + 0.3)
-
-        gain.gain.setValueAtTime(0.1, ctx.currentTime)
-        gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.3)
-
-        osc.connect(gain)
+        noise.connect(filter)
+        filter.connect(gain)
         gain.connect(ctx.destination)
-        osc.start()
-        osc.stop(ctx.currentTime + 0.3)
+
+        noise.start()
+        noise.stop(ctx.currentTime + 0.4)
     }
 
     const triggerGlitch = (duration = 300) => {
@@ -196,12 +229,18 @@ export function ExperienceProvider({ children }: { children: React.ReactNode }) 
     const toggleAudio = () => {
         if (!bgMusicRef.current) return
 
+        // Ensure AudioContext is resumed (required by most browsers)
+        if (audioContextRef.current?.state === 'suspended') {
+            audioContextRef.current.resume()
+        }
+
         if (isAudioPlaying) {
             bgMusicRef.current.pause()
-            setIsAudioPlaying(false)
         } else {
-            bgMusicRef.current.play().catch(e => console.error("Play failed", e))
-            setIsAudioPlaying(true)
+            bgMusicRef.current.play().catch(e => {
+                console.error("Play failed", e)
+                // If it fails, maybe it's the first interaction, try again or show UI
+            })
         }
     }
 
